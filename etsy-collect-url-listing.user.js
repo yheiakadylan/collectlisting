@@ -1,3 +1,6 @@
+// @downloadURL  https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v3.0.5/etsy-collect-url-listing.user.js
+// @updateURL    https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@latest/etsy-collect-url-listing.user.js
+
 // ==UserScript==
 // @name         Etsy Collect URL Listing
 // @namespace    https://hapidecor-tools
