@@ -1,3 +1,5 @@
+// @downloadURL  https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.0/path/etsy-txt-to-csv.user.js
+// @updateURL    https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@latest/path/etsy-txt-to-csv.user.js
 // ==UserScript==
 // @name         Etsy TXT -> CSV 
 // @namespace    https://hapidecor-tools
