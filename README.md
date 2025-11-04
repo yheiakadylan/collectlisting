@@ -1,29 +1,104 @@
-# Etsy Userscripts — 1-Click Install
+Etsy Userscripts — 1-Click Install
 
-Hai tiện ích Tampermonkey cho Etsy:
+Hai tiện ích Tampermonkey giúp thu thập URL listing từ Etsy theo Shop + Keyword và xuất CSV kèm đường dẫn ảnh để chạy tự động (UI.Vision / RPA) khi đăng sản phẩm lên Temu.
 
-- **Etsy Collect URL Listing** — Tìm kiếm URL Listing dựa trên tên Shop, Keyword
-- **Etsy TXT → CSV** — đọc TXT từ Script trên → gom link từ tab Items → vào từng listing đợi Tags/Images → xuất CSV: `nhớ nhập path lưu trữ`.
+<p align="center"> <a href="https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v3.0.5/etsy-collect-url-listing.user.js"> <img alt="Install Collect URL Listing" src="https://img.shields.io/badge/Install-Collect_URL_Listing-brightgreen"> </a> &nbsp; <a href="https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.0/etsy-txt-to-csv.user.js"> <img alt="Install TXT → CSV" src="https://img.shields.io/badge/Install-TXT_%E2%86%92_CSV-brightgreen"> </a> </p>
+🧰 Các script có gì?
+Script	Chức năng chính	Dùng khi…
+Etsy Collect URL Listing	Vào shop → nhập keyword 1 lần → quét URL listing trong grid → chuyển trang bằng nút trong .wt-action-group (ổn định kể cả Etsy ẩn ?page).	Bạn cần danh sách URL listing chuẩn, để đưa vào file TXT đầu vào cho script CSV.
+Etsy TXT → CSV	Đọc TXT (mỗi dòng là URL listing hoặc URL shop). Với shop: tự gom URL từ tab Items. Vào từng listing → đợi Tags/Images → bấm Download all images → đợi tải ảnh xong → xuất CSV: title,img1..img7.	Bạn muốn có file CSV + đường dẫn ảnh để nhập vào UI.Vision khi listing lên Temu.
+🚀 Cài đặt (1-Click)
 
----
+Bấm nút Install là Tampermonkey sẽ bật popup cài đặt → chọn Install.
 
-## 0) Cài Tampermonkey trước (nếu chưa có)
+A) Etsy Collect URL Listing
 
-- Chrome/Edge: https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en-US&utm_source=ext_sidebar  
+Cài đặt:
+https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v3.0.5/etsy-collect-url-listing.user.js
 
----
+Luôn cập nhật bản mới nhất:
+https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@latest/etsy-collect-url-listing.user.js
 
-## 1) Cài script (bấm là cài)
+B) Etsy TXT → CSV
 
-> Tampermonkey sẽ bật hộp thoại → nhấn **Install** là xong.
+Cài đặt:
+https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.0/etsy-txt-to-csv.user.js
 
-### A) Etsy Collect URL Listing
-[![Install Script](https://img.shields.io/badge/Install-Collect_URL_Listing-brightgreen)](https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v3.0.5/etsy-collect-url-listing.user.js)
+Luôn cập nhật bản mới nhất:
+https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@latest/etsy-txt-to-csv.user.js
 
-> Link auto-update (luôn lấy bản mới nhất):  
-> `https://cdn.jsdelivr.net/gh/YOUR_GITHUB/YOUR_REPO@latest/path/etsy-collect-url-listing.user.js`
+🧩 Yêu cầu trước khi dùng
 
-### B) Etsy TXT → CSV
-[![Install Script](https://img.shields.io/badge/Install-TXT_%E2%86%92_CSV-brightgreen)](https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.0/etsy-txt-to-csv.user.js)
+Cài Tampermonkey
 
+Chrome/Edge: https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo
 
+Bật quyền cần thiết
+
+Mở chrome://extensions → bật Developer mode
+
+Vào Tampermonkey → Details:
+
+Bật Allow User Scripts
+
+Bật Allow access to file URLs
+
+Cho phép tải nhiều file (multi-download)
+
+Lần đầu chạy Etsy TXT → CSV, trình duyệt sẽ hỏi Allow multiple downloads → chọn Allow để tải ảnh tự động.
+
+🧭 Quy trình sử dụng (đề xuất)
+
+B1. Dùng Etsy Collect URL Listing
+→ Chọn Shop + Keyword → Lấy danh sách URL listing mong muốn (để list lên Temu).
+
+B2. Dùng Etsy TXT → CSV
+→ Nạp file TXT từ B1 → Script sẽ vào từng listing, đợi Tags/Images, bấm Download all images, rồi xuất CSV (nhớ nhập path lưu ảnh cho đúng).
+
+B3. Giải nén ảnh Etsy
+→ Chọn tất cả file ảnh tải về từ Etsy → Right-click → Extract each archive to separate folder.
+
+B4. Vào Temu + UI.Vision
+→ Mở UI.Vision (tab CSV) → Paste file CSV từ B2 (xóa CSV cũ nếu có).
+
+B5. Chạy tự động
+→ Chọn … → Play loop → Nhập số vòng lặp tương ứng số sản phẩm cần list.
+
+💡 Lưu ý & Mẹo nhỏ
+
+Path ảnh Windows: trong CSV là các cột img1..img7. Hãy đặt thư mục tải ảnh phù hợp (ví dụ: C:\Users\<YOU>\Downloads\…) để UI.Vision đọc đúng.
+
+Khớp phiên bản: file .user.js đã gắn @version và link CDN theo tag (v3.0.5, v1.2.0). Khi có bản mới, chỉ cần tạo tag mới (xem bên dưới).
+
+Hiệu năng Etsy: nếu page grid không đủ 36 item, script vẫn chạy ổn (có cảnh báo nhẹ trong log).
+
+🔧 Troubleshooting nhanh
+
+Không thấy popup cài khi bấm Install:
+Kiểm tra đã cài Tampermonkey chưa. Thử mở link @latest.
+
+Không tải ảnh được / treo chờ ảnh:
+
+Đảm bảo đã Allow multiple downloads khi Chrome hỏi.
+
+Mở Console xem log (script có log trạng thái tải).
+
+CSV không có đủ đường dẫn ảnh:
+
+Kiểm tra lại path thư mục ảnh trong panel script.
+
+Đảm bảo file ảnh đã giải nén đúng cấu trúc.
+
+🏷️ Changelog
+
+Etsy Collect URL Listing v3.0.5
+
+Tìm theo Shop + Keyword một lần → phân trang bằng nút .wt-action-group (ổn định khi Etsy ẩn ?page).
+
+Đồng bộ số trang từ DOM/URL; log chi tiết; copy/export TXT/CSV.
+
+Etsy TXT → CSV v1.2.0
+
+Nhập TXT gồm URL listing hoặc URL shop → tự gom link từ tab Items.
+
+Vào listing → đợi Tags/Images, bấm Download all images → chờ network idle thông minh → xuất CSV title,img1..img7.
