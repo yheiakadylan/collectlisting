@@ -1,4 +1,5 @@
-Etsy Userscripts — 1-Click Install
+<h1 style="text-align:center">Etsy Userscripts — 1-Click Install</h1>
+
 
 Hai tiện ích Tampermonkey giúp thu thập URL listing từ Etsy theo Shop + Keyword và xuất CSV kèm đường dẫn ảnh để chạy tự động (UI.Vision) khi đăng sản phẩm lên Temu.
 
