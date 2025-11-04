@@ -2,15 +2,14 @@
 
 Hai tiện ích Tampermonkey cho Etsy:
 
-- **Etsy Collect URL Listing** — vào shop → gõ keyword 1 lần → quét URL listing theo grid → chuyển trang bằng nút trong `.wt-action-group`.
-- **Etsy TXT → CSV** — đọc TXT (URL listing hoặc shop) → gom link từ tab Items → vào từng listing đợi Tags/Images → xuất CSV: `title,img1..img7`.
+- **Etsy Collect URL Listing** — Tìm kiếm URL Listing dựa trên tên Shop, Keyword
+- **Etsy TXT → CSV** — đọc TXT từ Script trên → gom link từ tab Items → vào từng listing đợi Tags/Images → xuất CSV: `nhớ nhập path lưu trữ`.
 
 ---
 
 ## 0) Cài Tampermonkey trước (nếu chưa có)
 
-- Chrome/Edge: https://tampermonkey.net/?ext=dhdg&browser=chrome  
-- Firefox: https://tampermonkey.net/?ext=dhdg&browser=firefox
+- Chrome/Edge: https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en-US&utm_source=ext_sidebar  
 
 ---
 
@@ -26,18 +25,5 @@ Hai tiện ích Tampermonkey cho Etsy:
 
 ### B) Etsy TXT → CSV
 [![Install Script](https://img.shields.io/badge/Install-TXT_%E2%86%92_CSV-brightgreen)](https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.0/etsy-txt-to-csv.user.js)
-
-> Link auto-update (luôn lấy bản mới nhất):  
-> `https://cdn.jsdelivr.net/gh/YOUR_GITHUB/YOUR_REPO@latest/path/etsy-txt-to-csv.user.js`
-
----
-
-## 2) Hướng dẫn nhanh 
-
-1. Cài **Tampermonkey**.
-2. Bấm nút **Install** cho từng script ở trên → Tampermonkey hiện popup → **Install**.
-3. Vào `chrome://extensions/` (hoặc icon Tampermonkey) để bật/tắt khi cần.
-
----
 
 
