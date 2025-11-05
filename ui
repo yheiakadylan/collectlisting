@@ -1,0 +1,848 @@
+{
+  "Name": "listing temu",
+  "CreationDate": "2025-11-4",
+  "Commands": [
+    {
+      "Command": "open",
+      "Target": "https://seller.temu.com/products.html",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "refresh // ",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "2000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"products-tab-wrapper\"]/div/div/div[5]/div",
+      "Value": "",
+      "Description": "mở tab sản phẩm"
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": "mở tab sản phẩm"
+    },
+    {
+      "Command": "mouseOver",
+      "Target": "xpath=//*[@id=\"goodTableContainer\"]/div[2]/div/div/div/div/div[2]/div/div/table/tbody/tr/td[8]/div[2]",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"goodTableContainer\"]/div[2]/div/div/div/div/div[2]/div/div/table/tbody/tr/td[8]/div[2]",
+        "xpath=//td[8]/div[2]",
+        "css=#goodTableContainer > div.Spn_nested_123 > div > div.TB_outerWrapper_123.bc-HocGoodTable_outerWrapper_123.TB_hiddenRowBorder_123 > div > div > div.TB_body_123 > div > div.TB_hiddenScrollBar_123.TB_scrollXY_123 > table > tbody > tr.TB_tr_123.bc-HocGoodTable_tr_123.TB_hoveringRow_123.TB_father_123.rowLeftBg-YA-Jt.prdHoverRow > td.TB_td_123.bc-HocGoodTable_td_123.TB_cellTextAlignLeft_123.TB_cellVerticalAlignMiddle_123.TB_rightmostTd_123 > div.btnContent-1wczj"
+      ],
+      "Description": "hover để lộ menu 3 chấm"
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": "hover để lộ menu 3 chấm"
+    },
+    {
+      "Command": "click",
+      "Target": "/html/body/div[2]/div/div/div/div/ul/li[1]",
+      "Value": "",
+      "Description": "click vào nút edit/copy listing"
+    },
+    {
+      "Command": "comment",
+      "Target": "executeScript_Sandbox // (function(){var popups=document.querySelectorAll('body > div');for(var i=0;i<popups.length;i++){var p=popups[i];var btns=p.querySelectorAll('li,div,span,button');for(var j=0;j<btns.length;j++){var b=btns[j];var t=(b.innerText||b.textContent||'').trim().toLowerCase();if(t && (t==='copy listing' || t.indexOf('copy listing')>-1)){b.click();return true;}}}return false;})();",
+      "Value": "",
+      "Description": "click vào nút edit/copy listing"
+    },
+    {
+      "Command": "pause",
+      "Target": "3000",
+      "Value": "",
+      "Description": "chờ tab mới mở"
+    },
+    {
+      "Command": "comment",
+      "Target": "store // 1000",
+      "Value": "!timeout_wait",
+      "Description": "chờ tab mới mở"
+    },
+    {
+      "Command": "selectWindow",
+      "Target": "title=Temu | Add new product",
+      "Value": "",
+      "Description": "CHUYỂN sang tab form edit"
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${!csvReadLineNumber} == \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "store",
+      "Target": "2",
+      "Value": "!csvReadLineNumber",
+      "Description": "lần đầu thì đọc dòng 2 (bỏ header)"
+    },
+    {
+      "Command": "else",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "executeScript_Sandbox",
+      "Target": "return Number(${!csvReadLineNumber}) + 1;",
+      "Value": "nextLine",
+      "Description": "tăng thêm 1"
+    },
+    {
+      "Command": "store",
+      "Target": "${nextLine}",
+      "Value": "!csvReadLineNumber",
+      "Description": "ghi lại vào biến hệ thống"
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "csvRead",
+      "Target": "etsy_listing_title_tags_images.csv",
+      "Value": "",
+      "Description": "đọc đúng dòng vừa set ở trên"
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${!csvReadStatus} != \"OK\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "echo",
+      "Target": "CSV read failed",
+      "Value": "red",
+      "Description": ""
+    },
+    {
+      "Command": "exitMacro",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${!csvReadStatus} != \"OK\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "echo",
+      "Target": "CSV read failed",
+      "Value": "red",
+      "Description": ""
+    },
+    {
+      "Command": "exitMacro",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL1}",
+      "Value": "titleFromCsv",
+      "Description": "lấy title ở cột 1"
+    },
+    {
+      "Command": "executeScript",
+      "Target": "var el = document.querySelector('input[data-testid=\"beast-core-input-htmlInput\"]') || document.querySelector('#goodsName input.IPT_input_123') || document.querySelector('input.IPT_input_123'); if (el){ el.scrollIntoView({block:'center',inline:'nearest'}); var ev={bubbles:true,cancelable:true,view:window}; el.dispatchEvent(new MouseEvent('mousedown',ev)); el.dispatchEvent(new MouseEvent('mouseup',ev)); el.click(); el.focus(); }",
+      "Value": "",
+      "Description": "focus vào ô product name để nó chuyển data-status=active"
+    },
+    {
+      "Command": "pause",
+      "Target": "200",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "executeScript",
+      "Target": "var el = document.querySelector('input[data-testid=\"beast-core-input-htmlInput\"]') || document.querySelector('#goodsName input.IPT_input_123') || document.querySelector('input.IPT_input_123'); if (el){ var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; setter.call(el, ''); el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }",
+      "Value": "",
+      "Description": "xóa tên cũ"
+    },
+    {
+      "Command": "executeScript",
+      "Target": "var raw = (${titleFromCsv});\nvar json = '\"' + String(raw)\n  .replace(/\\\\/g, '\\\\\\\\')     // escape backslash\n  .replace(/\"/g, '\\\\\"')       // escape double-quote\n  .replace(/\\r?\\n/g, '\\\\n')   // normalize newline\n  + '\"';\nvar v = JSON.parse(json);\n\n// bóc cặp quote CSV nếu có, và chuyển \"\" -> \"\nif (v && v.length > 1 && v.startsWith('\"') && v.endsWith('\"')) { v = v.slice(1, -1); }\nv = v.replace(/\"\"/g, '\"');\n\nvar el = document.querySelector('input[data-testid=\"beast-core-input-htmlInput\"]')\n      || document.querySelector('#goodsName input.IPT_input_123')\n      || document.querySelector('input.IPT_input_123');\nif (el) {\n  var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;\n  setter.call(el, v);\n  el.dispatchEvent(new Event('input', { bubbles: true }));\n  el.dispatchEvent(new Event('change', { bubbles: true }));\n}",
+      "Value": "",
+      "Description": "điền title mới từ csv"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div/div[2]/span/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div/div[2]/span/div",
+        "xpath=//div[2]/span/div",
+        "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.tips-100Dv.color-EPxP3.tips-1zF9N > div:nth-child(2) > span > div"
+      ],
+      "Description": "mở popover xóa hết ảnh cũ"
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": "mở popover xóa hết ảnh cũ"
+    },
+    {
+      "Command": "store",
+      "Target": "true",
+      "Value": "!errorignore",
+      "Description": "bỏ qua nếu không click được"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=/html/body/div[2]/div/div[2]/div/div[2]/span[2]",
+      "Value": "",
+      "Description": "confirm xóa ảnh cũ"
+    },
+    {
+      "Command": "store",
+      "Target": "false",
+      "Value": "!errorignore",
+      "Description": "tiếp tục dừng"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL2}",
+      "Value": "img1",
+      "Description": "ảnh chính 1"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL3}",
+      "Value": "img2",
+      "Description": "ảnh chính 2"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL4}",
+      "Value": "img3",
+      "Description": "ảnh chính 3"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL5}",
+      "Value": "img4",
+      "Description": "ảnh chính 4"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL6}",
+      "Value": "img5",
+      "Description": "ảnh chính 5"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL7}",
+      "Value": "img6",
+      "Description": "ảnh chính 6"
+    },
+    {
+      "Command": "store",
+      "Target": "${!COL8}",
+      "Value": "img7",
+      "Description": "ảnh chính 7"
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG1 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img1} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "bấm nút upload ảnh"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": "focus input file"
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img1}",
+      "Description": "chọn ảnh 1 từ csv (col2, cũng là ảnh variant)"
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG2 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img2} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "upload ảnh 2"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img2}",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG3 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img3} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "upload ảnh 3"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img3}",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG4 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img4} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "upload ảnh 4"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img4}",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG5 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img5} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "upload ảnh 5"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img5}",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG6 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img6} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "upload ảnh 6"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img6}",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "=== IMG7 ===",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "if_v2",
+      "Target": "${img7} != \"\"",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": "upload ảnh 7"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
+      "Value": "${img7}",
+      "Description": ""
+    },
+    {
+      "Command": "end",
+      "Target": "",
+      "Value": "",
+      "Description": "kết thúc upload ảnh"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[3]/div[2]/div[2]/div",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "waitForElementVisible",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[4]/div[2]/div[3]/div/div",
+      "Value": "20000",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[4]/div[2]/div[3]/div/div",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "3500",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#client-table-wrapper > div > div > div > table > thead > tr > th.TB_checkCell_123.TB_th_123 > span > span > label > div > div > svg",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/thead/tr/th/span/span/label/div/div/svg",
+        "css=#client-table-wrapper > div > div > div > table > thead > tr > th.TB_checkCell_123.TB_th_123 > span > span > label > div > div > svg"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/tbody/tr/td[5]/div/div/div/div/div/div/input",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/tbody/tr/td[5]/div/div/div/div/div/div/input",
+        "xpath=//td[5]/div/div/div/div/div/div/input",
+        "css=#client-table-wrapper > div > div > div > table > tbody > tr.TB_tr_123.applyRow-1tG2S > td:nth-child(5) > div > div > div > div > div > div > input"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/tbody/tr/td[5]/div/div/div/div/div/div/input",
+      "Value": "999",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#client-table-wrapper > div > div > div > table > tbody > tr.TB_tr_123.applyRow-1tG2S > td:nth-child(4) > div.validateWrapper-7AjU- > div > div > div > div.imgsPopBtn-Iz3H8 > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#carouselGallery > div > div.Grid_row_123.Grid_rowHorizontal_123.Grid_rowJustifyStart_123.Form_itemContent_123.Form_itemContentCenter_123 > div > div > div:nth-child(1) > div > div > div.trigger-3n6VA > svg > path:nth-child(1)",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "waitForElementPresent",
+      "Target": "css=div.MDL_innerWrapper_123[data-testid=\"beast-core-modal-innerWrapper\"]",
+      "Value": "3000",
+      "Description": ""
+    },
+    {
+      "Command": "executeScript",
+      "Target": "var m=document.querySelector('div.MDL_inner_123'); if(m){ m.scrollIntoView({block:'center'}); try{m.focus();}catch(e){}}",
+      "Value": "",
+      "Description": "focus popup"
+    },
+    {
+      "Command": "pause",
+      "Target": "800",
+      "Value": "",
+      "Description": "focus popup"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"carouselGallery\"]/div/div[2]/div/div/div/div/div/input",
+      "Value": "",
+      "Description": "mở input để upload ảnh variant"
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"carouselGallery\"]/div/div[2]/div/div/div/div/div/input",
+      "Value": "${!COL2}",
+      "Description": "upload ảnh variant từ cột 2 của CSV"
+    },
+    {
+      "Command": "pause",
+      "Target": "10000",
+      "Value": "${!COL2}",
+      "Description": "upload ảnh variant từ cột 2 của CSV"
+    },
+    {
+      "Command": "click",
+      "Target": "/html/body/div[4]/div/div/div/div[3]/div[2]/div/div[2]/div",
+      "Value": "${!COL2}",
+      "Description": "upload ảnh variant từ cột 2 của CSV"
+    },
+    {
+      "Command": "pause",
+      "Target": "2000",
+      "Value": "${!COL2}",
+      "Description": "upload ảnh variant từ cột 2 của CSV"
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/tbody/tr/td[14]/div/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/tbody/tr/td[14]/div/div",
+        "xpath=//td[14]/div/div",
+        "css=#client-table-wrapper > div > div > div > table > tbody > tr.TB_tr_123.applyRow-1tG2S > td.TB_td_123.TB_cellTextAlignLeft_123.TB_cellVerticalAlignTop_123.TB_rightSticky_123.TB_rightStickyFirst_123 > div > div"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/thead/tr/th[9]/span/div/div/div/span",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"client-table-wrapper\"]/div/div/div/table/thead/tr/th[9]/span/div/div/div/span",
+        "xpath=//span/div/div/div/span",
+        "css=#client-table-wrapper > div > div > div > table > thead > tr > th:nth-child(9) > span > div > div.topWrap-3NtOh > div > span"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[4]/div[2]/div[3]/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[4]/div[2]/div[3]/div",
+        "xpath=//div[4]/div[2]/div[3]/div",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.footer-1parU > div.right-1FklR > div.btn-3yOxL.primary-2pgGm.large-1eT_m.button-m82zh > div"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "waitForElementVisible",
+      "Target": "xpath=//*[@id=\"shipmentLimitSecond\"]/div[2]/div/div/div/div/div/div/div/div/div/div/input",
+      "Value": "20000",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"shipmentLimitSecond\"]/div[2]/div/div/div/div/div/div/div/div/div/div/input",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"shipmentLimitSecond\"]/div[2]/div/div/div/div/div/div/div/div/div/div/input",
+        "xpath=//input[@value='7']",
+        "xpath=//div[2]/div/div/div/div/div/div/div/div/div/div/input",
+        "css=#shipmentLimitSecond > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div > div > div > div > div > div > div > div.IPT_inputBlockCell_123.ST_inputBlockCell_123 > input"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=/html/body/div[2]/div/div/div/div/ul/li[7]",
+      "Value": "",
+      "Targets": [
+        "xpath=/html/body/div[2]/div/div/div/div/ul/li[7]",
+        "xpath=//li[7]",
+        "css=body > div.PT_outerWrapper_123.PP_outerWrapper_123.ST_dropdown_123.ST_largeDropdown_123.PT_dropdown_123.PT_portalBottomLeft_123.PT_inCustom_123.PP_dropdown_123 > div > div > div > div > ul > li.cIL_item_123.cIL_large_123.cIL_active_123.cIL_highlight_123.ST_itemRendererLabel_123.ST_itemRendererLabelChecked_123"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[2]/div[2]/div[3]/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[2]/div[2]/div[3]/div",
+        "xpath=//div[2]/div[3]/div",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.footer-1parU.footer-PVucC > div.right-1FklR > div.btn-3yOxL.primary-2pgGm.large-1eT_m.button-m82zh > div"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "3000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div/div/div/div[2]/div/div/div/div/div/div/div/span/div/div/div/div/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div/div/div/div[2]/div/div/div/div/div/div/div/span/div/div/div/div/div",
+        "xpath=//span/div/div/div/div/div",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.wrap-1aRq4.formBody-1KpUM > div:nth-child(1) > div > div > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div > div > div > div > div > span > div > div > div > div > div.IPT_autosizeWrapper_123"
+      ],
+      "Description": "choose no warning"
+    },
+    {
+      "Command": "type",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div/div/div/div[2]/div/div/div/div/div/div/div/span/div/div/div/div/div/div/input",
+      "Value": "no",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div/div/div/div[2]/div/div/div/div/div/div/div/span/div/div/div/div/div/div/input",
+        "xpath=//input[@value='no']",
+        "xpath=//input",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.wrap-1aRq4.formBody-1KpUM > div:nth-child(1) > div > div > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div > div > div > div > div > span > div > div > div > div > div.IPT_autosizeWrapper_123 > div > input"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=/html/body/div[2]/div/div/div/div/ul/div/div/li/div/div/div",
+      "Value": "",
+      "Targets": [
+        "xpath=/html/body/div[2]/div/div/div/div/ul/div/div/li/div/div/div",
+        "xpath=//li/div/div/div",
+        "css=body > div.PT_outerWrapper_123.PP_outerWrapper_123.ST_dropdown_123.ST_largeDropdown_123.ST_customItem_123.PT_dropdown_123.PT_portalBottomLeft_123.PT_inCustom_123.PP_dropdown_123 > div > div > div > div > ul > div > div > li > div > div > div"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div[4]/div/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div[4]/div/div",
+        "xpath=//form/div/div[4]/div/div",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.wrap-1aRq4.formBody-1KpUM > div:nth-child(4) > div > div.Grid_col_123.Form_itemLabel_123.Form_itemLabelRight_123.Form_labelLeft_123"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "css=#mms-layout-content > div > div.main-bxAf_ > form > div.wrap-1aRq4.formBody-1KpUM > div:nth-child(4) > div > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.skipWrapper-2Ezx9 > label > div.CBX_squareInputWrapper_123 > div > svg",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div/div[4]/div/div[2]/div/div/div/label/div/div/svg",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.wrap-1aRq4.formBody-1KpUM > div:nth-child(4) > div > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.skipWrapper-2Ezx9 > label > div.CBX_squareInputWrapper_123 > div > svg"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "1000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "click",
+      "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[2]/div[2]/div[3]/div",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[2]/div[2]/div[3]/div",
+        "xpath=//div[2]/div[3]/div",
+        "css=#mms-layout-content > div > div.main-bxAf_ > form > div.footer-1parU > div.right-1FklR > div.btn-3yOxL.primary-2pgGm.large-1eT_m.button-m82zh > div"
+      ],
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "10000",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "store",
+      "Target": "true",
+      "Value": "!errorignore",
+      "Description": ""
+    },
+    {
+      "Command": "selectWindow",
+      "Target": "TAB=CLOSE",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "comment",
+      "Target": "executeScript // (function(){ window.open('','_self'); window.close(); })();",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "selectWindow",
+      "Target": "title=Temu | Manage products",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "store",
+      "Target": "false",
+      "Value": "!errorignore",
+      "Description": ""
+    }
+  ]
+}
