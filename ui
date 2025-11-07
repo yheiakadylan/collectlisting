@@ -1,6 +1,6 @@
 {
-  "Name": "listing temu",
-  "CreationDate": "2025-11-4",
+  "Name": "new",
+  "CreationDate": "2025-11-7",
   "Commands": [
     {
       "Command": "open",
@@ -63,7 +63,7 @@
     },
     {
       "Command": "pause",
-      "Target": "3000",
+      "Target": "5000",
       "Value": "",
       "Description": "chờ tab mới mở"
     },
@@ -75,7 +75,7 @@
     },
     {
       "Command": "selectWindow",
-      "Target": "title=Temu | Add new product",
+      "Target": "tab=1",
       "Value": "",
       "Description": "CHUYỂN sang tab form edit"
     },
@@ -235,302 +235,150 @@
       "Description": "tiếp tục dừng"
     },
     {
-      "Command": "store",
-      "Target": "${!COL2}",
-      "Value": "img1",
-      "Description": "ảnh chính 1"
-    },
-    {
-      "Command": "store",
-      "Target": "${!COL3}",
-      "Value": "img2",
-      "Description": "ảnh chính 2"
+      "Command": "comment",
+      "Target": "=== BULK IMAGE UPLOAD VIA FILE DIALOG (Windows) ===",
+      "Value": "",
+      "Description": ""
     },
     {
       "Command": "store",
-      "Target": "${!COL4}",
-      "Value": "img3",
-      "Description": "ảnh chính 3"
+      "Target": "${!COL2}",
+      "Value": "imgFolder",
+      "Description": "CSV cột 2 sẽ là đường dẫn thư mục ảnh. Ví dụ: C:\\images\\productA\\"
     },
     {
-      "Command": "store",
-      "Target": "${!COL5}",
-      "Value": "img4",
-      "Description": "ảnh chính 4"
+      "Command": "XClick",
+      "Target": "hwehf3_dpi_96.png",
+      "Value": "",
+      "Targets": [
+        "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/div/svg/path",
+        "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)"
+      ],
+      "Description": "Bấm nút mở hộp thoại Upload"
     },
     {
-      "Command": "store",
-      "Target": "${!COL6}",
-      "Value": "img5",
-      "Description": "ảnh chính 5"
+      "Command": "pause",
+      "Target": "800",
+      "Value": "",
+      "Description": ""
     },
     {
-      "Command": "store",
-      "Target": "${!COL7}",
-      "Value": "img6",
-      "Description": "ảnh chính 6"
+      "Command": "XType",
+      "Target": "${imgFolder}",
+      "Value": "",
+      "Description": "Vào thư mục chứa ảnh"
     },
     {
-      "Command": "store",
-      "Target": "${!COL8}",
-      "Value": "img7",
-      "Description": "ảnh chính 7"
+      "Command": "XType",
+      "Target": "${KEY_ENTER}",
+      "Value": "",
+      "Description": "Vào thư mục chứa ảnh"
+    },
+    {
+      "Command": "pause",
+      "Target": "400",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_CTRL+KEY_A}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "pause",
+      "Target": "300",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_ENTER}",
+      "Value": "",
+      "Description": "Xác nhận mở"
     },
     {
       "Command": "comment",
-      "Target": "=== IMG1 ===",
+      "Target": "pause // 10000",
       "Value": "",
-      "Description": ""
+      "Description": "Đợi upload xong (tuỳ dung lượng, tăng nếu cần)"
     },
     {
-      "Command": "if_v2",
-      "Target": "${img1} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "bấm nút upload ảnh"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": "focus input file"
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img1}",
-      "Description": "chọn ảnh 1 từ csv (col2, cũng là ảnh variant)"
-    },
-    {
-      "Command": "end",
-      "Target": "",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "=== IMG2 ===",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "if_v2",
-      "Target": "${img2} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "upload ảnh 2"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img2}",
-      "Description": ""
-    },
-    {
-      "Command": "end",
-      "Target": "",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "=== IMG3 ===",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "if_v2",
-      "Target": "${img3} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "upload ảnh 3"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img3}",
-      "Description": ""
-    },
-    {
-      "Command": "end",
-      "Target": "",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "=== IMG4 ===",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "if_v2",
-      "Target": "${img4} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "upload ảnh 4"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img4}",
-      "Description": ""
-    },
-    {
-      "Command": "end",
-      "Target": "",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "=== IMG5 ===",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "if_v2",
-      "Target": "${img5} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "upload ảnh 5"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img5}",
-      "Description": ""
-    },
-    {
-      "Command": "end",
-      "Target": "",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "=== IMG6 ===",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "if_v2",
-      "Target": "${img6} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "upload ảnh 6"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img6}",
-      "Description": ""
-    },
-    {
-      "Command": "end",
-      "Target": "",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "=== IMG7 ===",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "if_v2",
-      "Target": "${img7} != \"\"",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "click",
-      "Target": "css=#detailImage > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div.uploadWrap-1Ynhn > div > div > svg > path:nth-child(1)",
-      "Value": "",
-      "Description": "upload ảnh 7"
-    },
-    {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/input",
-      "Value": "${img7}",
-      "Description": ""
-    },
-    {
-      "Command": "end",
-      "Target": "",
+      "Command": "pause",
+      "Target": "30000",
       "Value": "",
       "Description": "kết thúc upload ảnh"
     },
     {
       "Command": "click",
       "Target": "xpath=//*[@id=\"mms-layout-content\"]/div/div[2]/form/div[3]/div[2]/div[2]/div",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "pause",
+      "Target": "5000",
       "Value": "",
       "Description": ""
     },
@@ -592,57 +440,87 @@
       "Description": ""
     },
     {
-      "Command": "click",
-      "Target": "css=#carouselGallery > div > div.Grid_row_123.Grid_rowHorizontal_123.Grid_rowJustifyStart_123.Form_itemContent_123.Form_itemContentCenter_123 > div > div > div:nth-child(1) > div > div > div.trigger-3n6VA > svg > path:nth-child(1)",
+      "Command": "XClick",
+      "Target": "0p89yq_dpi_96.png",
       "Value": "",
       "Description": ""
-    },
-    {
-      "Command": "waitForElementPresent",
-      "Target": "css=div.MDL_innerWrapper_123[data-testid=\"beast-core-modal-innerWrapper\"]",
-      "Value": "3000",
-      "Description": ""
-    },
-    {
-      "Command": "executeScript",
-      "Target": "var m=document.querySelector('div.MDL_inner_123'); if(m){ m.scrollIntoView({block:'center'}); try{m.focus();}catch(e){}}",
-      "Value": "",
-      "Description": "focus popup"
     },
     {
       "Command": "pause",
       "Target": "800",
       "Value": "",
-      "Description": "focus popup"
+      "Description": ""
     },
     {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"carouselGallery\"]/div/div[2]/div/div/div/div/div/input",
+      "Command": "XType",
+      "Target": "${imgFolder}",
       "Value": "",
-      "Description": "mở input để upload ảnh variant"
+      "Description": "Vào thư mục chứa ảnh"
     },
     {
-      "Command": "type",
-      "Target": "xpath=//*[@id=\"carouselGallery\"]/div/div[2]/div/div/div/div/div/input",
-      "Value": "${!COL2}",
-      "Description": "upload ảnh variant từ cột 2 của CSV"
+      "Command": "XType",
+      "Target": "${KEY_ENTER}",
+      "Value": "",
+      "Description": "Vào thư mục chứa ảnh"
+    },
+    {
+      "Command": "pause",
+      "Target": "400",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_DEL}",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "XType",
+      "Target": "\"1\"",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_TAB}",
+      "Value": "",
+      "Description": "Chọn tất cả file ảnh trong thư mục"
+    },
+    {
+      "Command": "pause",
+      "Target": "300",
+      "Value": "",
+      "Description": ""
+    },
+    {
+      "Command": "XType",
+      "Target": "${KEY_ENTER}",
+      "Value": "",
+      "Description": "Xác nhận mở"
     },
     {
       "Command": "pause",
       "Target": "10000",
-      "Value": "${!COL2}",
-      "Description": "upload ảnh variant từ cột 2 của CSV"
+      "Value": "",
+      "Description": "Đợi upload xong (tuỳ dung lượng, tăng nếu cần)"
     },
     {
-      "Command": "click",
-      "Target": "/html/body/div[4]/div/div/div/div[3]/div[2]/div/div[2]/div",
-      "Value": "${!COL2}",
-      "Description": "upload ảnh variant từ cột 2 của CSV"
+      "Command": "XClick",
+      "Target": "0falau_dpi_96.png",
+      "Value": "",
+      "Description": "Đợi upload xong (tuỳ dung lượng, tăng nếu cần)"
     },
     {
       "Command": "pause",
       "Target": "2000",
-      "Value": "${!COL2}",
+      "Value": "",
       "Description": "upload ảnh variant từ cột 2 của CSV"
     },
     {
@@ -823,12 +701,6 @@
     {
       "Command": "selectWindow",
       "Target": "TAB=CLOSE",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "executeScript // (function(){ window.open('','_self'); window.close(); })();",
       "Value": "",
       "Description": ""
     },
