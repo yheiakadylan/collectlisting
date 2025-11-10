@@ -1,10 +1,10 @@
-// @downloadURL  https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.0/path/etsy-txt-to-csv.user.js
+// @downloadURL  https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@v1.2.1/path/etsy-txt-to-csv.user.js
 // @updateURL    https://cdn.jsdelivr.net/gh/yheiakadylan/collectlisting@latest/path/etsy-txt-to-csv.user.js
 // ==UserScript==
-// @name         Etsy TXT -> CSV 
+// @name         Etsy TXT -> CSV (title + folder)
 // @namespace    https://hapidecor-tools
-// @version      1.2.0
-// @description  Đọc TXT (mỗi dòng 1 URL listing hoặc shop). Với shop: gom link listing từ tab Items (auto-scroll). Vào từng listing: đợi popup Tags render, ghép Title + 13 tags, click “Download All Images”, ĐỢI TẢI ẢNH XONG, rồi xuất CSV: title,img1..img7 (đường dẫn Windows theo mẫu).
+// @version      1.2.1
+// @description  Đọc TXT (mỗi dòng 1 URL listing hoặc shop). Với shop: gom link listing từ tab Items (auto-scroll). Vào từng listing: đợi popup Tags render, ghép Title + 13 tags. Tùy chọn: bấm “Download All Images” và CHỜ (hoặc bỏ qua). Export CSV: title,col2 (col2 = downloadFolder/listing-<id>-images).
 // @match        *://*.etsy.com/*
 // @run-at       document-idle
 // @grant        GM_getValue
@@ -34,7 +34,8 @@
     imgFolderWin: 'C:\\Users\\pcx.vn\\Downloads', // gốc folder tải ảnh
     navCooldownMs: 2500,
 
-    // ---- NEW (đợi tải ảnh) ----
+    // ---- Tải ảnh (có thể TẮT) ----
+    downloadEnabled: true,   // <== TÙY CHỌN MỚI
     downloadQuietMs: 3000,   // thời gian yên lặng mạng để xem là đã xong
     maxDownloadWaitMs: 60000 // timeout tối đa chờ tải ảnh
   };
@@ -42,8 +43,8 @@
   // ============================
   // STORAGE + LOGGING
   // ============================
-  const gmGet=(k,def)=>{try{const v=GM_getValue(k);return v===undefined?def:v;}catch{const v2=localStorage.getItem(k);return v2?JSON.parse(v2):def;}};
-  const gmSet=(k,v)=>{try{GM_setValue(k,v);}catch{localStorage.setItem(k,JSON.stringify(v));}};
+  const gmGet=(k,def)=>{try{const v=GM_getValue(k);return v===undefined?def:v;}catch{const v2=localStorage.getItem(k);return v2?JSON.parse(v2):def;}}; // eslint-disable-line
+  const gmSet=(k,v)=>{try{GM_setValue(k,v);}catch{localStorage.setItem(k,JSON.stringify(v));}}; // eslint-disable-line
   const LOG_LIMIT=1200;
   function log(level, ...parts){
     const logs=gmGet(SKEY_LOGS,[]);
@@ -126,18 +127,16 @@
   }
 
   // ============================
-  // NETWORK WATCHER (NEW)
+  // NETWORK WATCHER
   // ============================
   let NET_ACTIVE = 0;
   let NET_LAST_TS = 0;
   let NET_PATCHED = false;
 
   function shouldTrackUrl(url){
-    // Theo dõi request tải ảnh/zip/phân giải ảnh Etsy
-    // Có thể tinh chỉnh thêm pattern tuỳ extension download bạn dùng
     try{
       const u = String(url);
-      return /\/il\//.test(u) // ảnh Etsy thường có /il/
+      return /\/il\//.test(u) // ảnh Etsy thường /il/
           || /\.jpe?g($|\?)/i.test(u)
           || /\.png($|\?)/i.test(u)
           || /\.webp($|\?)/i.test(u)
@@ -148,13 +147,11 @@
   function patchNetworkOnce(){
     if (NET_PATCHED) return;
     NET_PATCHED = true;
-    // fetch
     const _fetch = window.fetch;
     window.fetch = function(...args){
       try{ if(shouldTrackUrl(args?.[0])) { NET_ACTIVE++; NET_LAST_TS=Date.now(); } }catch{}
       return _fetch.apply(this,args).finally(()=>{ try{ if(shouldTrackUrl(args?.[0])) { NET_ACTIVE=Math.max(0,NET_ACTIVE-1); NET_LAST_TS=Date.now(); } }catch{} });
     };
-    // XHR
     const _open = XMLHttpRequest.prototype.open;
     const _send = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.open = function(method,url,...rest){
@@ -173,13 +170,9 @@
   async function waitForNetworkIdle({quietMs, maxWaitMs}){
     const start = Date.now();
     let seenAnyActivity = false;
-    // Nếu chưa patch thì patch
     patchNetworkOnce();
-
     while (Date.now() - start < maxWaitMs){
-      // Đánh dấu có hoạt động nếu từng thấy NET_ACTIVE>0 hoặc NET_LAST_TS thay đổi
       if (NET_ACTIVE>0) seenAnyActivity = true;
-
       const since = Date.now() - (NET_LAST_TS||0);
       if (seenAnyActivity && NET_ACTIVE===0 && since >= quietMs){
         info('network idle OK', {since, quietMs});
@@ -198,7 +191,6 @@
       const dis = btn.disabled || btn.getAttribute('aria-disabled')==='true';
       return {t,dis};
     };
-    // chờ giai đoạn đang tải (disabled/đổi text)
     let enteredBusy=false;
     while(Date.now()-start<maxWaitMs){
       const s=getState();
@@ -207,7 +199,6 @@
           enteredBusy=true;
         }
       }else{
-        // đã vào busy, chờ thoát busy
         if(!s.dis && !/downloading|processing|please wait|đang|generating/i.test(s.t)){
           info('download button settled');
           return true;
@@ -222,18 +213,13 @@
   async function waitDownloadsSmart(btn, settings){
     const {downloadQuietMs, maxDownloadWaitMs} = settings;
     const t0 = Date.now();
-    // chạy song song 2 chiến lược: idle mạng & settle nút
     const p1 = waitForNetworkIdle({quietMs: downloadQuietMs, maxWaitMs: maxDownloadWaitMs});
     const p2 = btn ? waitForButtonSettle(btn, {maxWaitMs: maxDownloadWaitMs}) : Promise.resolve(false);
-
-    // Nếu cái nào xong trước là OK; nếu cả 2 timeout thì coi là thất bại (nhưng vẫn cho qua để không kẹt)
     let done=false;
     await Promise.race([
       p1.then(v=>{ if(v) done=true; }),
       p2.then(v=>{ if(v) done=true; })
     ]);
-
-    // Nếu race chưa xác nhận, tiếp tục chờ thêm bằng idle mạng (cho chắc)
     if(!done){
       const left = Math.max(0, maxDownloadWaitMs - (Date.now()-t0));
       await waitForNetworkIdle({quietMs: downloadQuietMs, maxWaitMs: left});
@@ -262,7 +248,7 @@
 
     const panel=document.createElement('div'); panel.id='elc_panel'; panel.innerHTML=`
 <header>
-  <div>📥 Etsy TXT → CSV (title + 13 tags + img1..7)</div>
+  <div>📥 Etsy TXT → CSV (title + folder)</div>
   <div class="btns">
     <button id="elc_min">–</button>
     <button id="elc_close">✕</button>
@@ -282,10 +268,13 @@
     <div><label>Max listings / shop</label><input id="elc_maxShop" type="number" min="1"/></div>
   </div>
   <div class="grid">
+    <div><label>Windows Downloads folder</label><input id="elc_imgRoot" placeholder="C:\\\\Users\\\\pcx.vn\\\\Downloads"/></div>
+    <div><label><input type="checkbox" id="elc_download"/> Tải ảnh & đợi xong</label></div>
+  </div>
+  <div class="grid">
     <div><label>Quiet after downloads (ms)</label><input id="elc_qms" type="number" min="500"/></div>
     <div><label>Max wait downloads (ms)</label><input id="elc_mdw" type="number" min="1000"/></div>
   </div>
-  <div><label>Windows Downloads folder</label><input id="elc_imgRoot" placeholder="C:\\\\Users\\\\pcx.vn\\\\Downloads"/></div>
   <div class="row">
     <input id="elc_file" type="file" accept=".txt"/>
     <button id="elc_load" class="secondary">Load TXT</button>
@@ -302,16 +291,15 @@
 </div>`;
     document.body.appendChild(panel);
 
-    // Drag
     makeDraggable(panel, panel.querySelector('header'));
 
-    // Bind UI
     const waitInput = panel.querySelector('#elc_wait');
     const deepChk   = panel.querySelector('#elc_deep');
     const slowChk   = panel.querySelector('#elc_slow');
     const shopPagesInput = panel.querySelector('#elc_shopPages');
     const maxShopInput   = panel.querySelector('#elc_maxShop');
     const imgRootInput   = panel.querySelector('#elc_imgRoot');
+    const downloadChk    = panel.querySelector('#elc_download');
     const qmsInput       = panel.querySelector('#elc_qms');
     const mdwInput       = panel.querySelector('#elc_mdw');
     const stateInput     = panel.querySelector('#elc_state');
@@ -326,6 +314,7 @@
     shopPagesInput.value = cfg.shopPages;
     maxShopInput.value   = cfg.maxListingsPerShop;
     imgRootInput.value   = cfg.imgFolderWin;
+    downloadChk.checked  = cfg.downloadEnabled;
     qmsInput.value       = cfg.downloadQuietMs;
     mdwInput.value       = cfg.maxDownloadWaitMs;
 
@@ -360,6 +349,7 @@
         maxListingsPerShop: Math.max(1, Number(maxShopInput.value)||1),
         imgFolderWin: String(imgRootInput.value||DEF.imgFolderWin),
         navCooldownMs: DEF.navCooldownMs,
+        downloadEnabled: !!downloadChk.checked, // <== dùng để bật/tắt tải ảnh
         downloadQuietMs: Math.max(500, Number(qmsInput.value)||DEF.downloadQuietMs),
         maxDownloadWaitMs: Math.max(1000, Number(mdwInput.value)||DEF.maxDownloadWaitMs),
       };
@@ -395,7 +385,6 @@
     }
     if(gmGet(SKEY_STATE,'idle')==='running') setTimeout(stepRunner, 400);
 
-    // expose render/update to outer funcs
     window.__elc_renderLogs = renderLogsToUI;
     window.__elc_updateStats = updateStats;
     window.__elc_updateState = updateState;
@@ -550,46 +539,45 @@
     const titleNode = await waitFor('h1[data-buy-box-listing-title="true"]', Math.max(6000, settings.waitMs));
     const rawTitle = (titleNode?.textContent||'').trim();
 
-    // Tags (chờ popup/khối như bạn mô tả)
+    // Tags
     const tags = await waitTagsBlock(13000);
     const tags13 = tags.slice(0,13);
     const titleWithTags = joinTitleWithTags(rawTitle, tags13);
 
-    // Click "Download All Images" nếu có -> SAU ĐÓ CHỜ XONG
-    const dlBtn = document.querySelector('#heyEtsyDownloadAllImages');
-    if (dlBtn) {
-      try{
-        patchNetworkOnce(); // bảo đảm đang theo dõi mạng
-        dlBtn.click();
-        info('clicked Download All Images');
-
-        // tip: nếu extension của bạn tạo zip/ảnh qua network, network idle sẽ bắt được
-        await waitDownloadsSmart(dlBtn, settings);
-        info('downloads finished (smart wait)');
-      }catch(e){ warn('cannot click download btn', e); }
+    // Tải ảnh nếu bật
+    if (settings.downloadEnabled){
+      const dlBtn = document.querySelector('#heyEtsyDownloadAllImages');
+      if (dlBtn) {
+        try{
+          patchNetworkOnce();
+          dlBtn.click();
+          info('clicked Download All Images');
+          await waitDownloadsSmart(dlBtn, settings);
+          info('downloads finished (smart wait)');
+        }catch(e){ warn('cannot click download btn', e); }
+      } else {
+        warn('download button not found (downloadEnabled=true)');
+      }
     } else {
-      warn('download button not found');
+      info('download disabled → skip waiting images');
     }
 
-    // Đếm ảnh để build img1..img7 (chỉ để điền đường dẫn mẫu)
-    const imgCount = Math.min(7, await countGalleryImages(settings));
+    // Folder path cho col2
     const listingId = getListingId(listingUrl) || 'unknown';
-    const paths = buildWindowsImagePaths(listingId, imgCount, settings.imgFolderWin);
+    const folderPath = buildWindowsImageFolderPath(listingId, settings.imgFolderWin);
 
-    // Push row
-    const row = { title: titleWithTags };
-    for(let i=1;i<=7;i++) row[`img${i}`] = paths[i-1] || '';
+    // Push row (CSV: title, col2)
+    const row = { title: titleWithTags, col2: folderPath };
     const rows=gmGet(SKEY_ROWS,[]); rows.push(row); gmSet(SKEY_ROWS, rows);
 
     info('row added', row);
-    toast(`✅ Collected: ${rawTitle.slice(0,60)}… | imgs=${imgCount}`);
+    toast(`✅ Collected: ${rawTitle.slice(0,60)}…`);
     await sleep(200 + (settings.slowMode?400:0));
   }
 
   async function waitTagsBlock(timeout=12000){
     const deadline=Date.now()+timeout;
     while(Date.now()<deadline){
-      // Tìm theo cấu trúc thường gặp: dd chứa các <a href="https://www.etsy.com/search?q=...">
       const dd = document.querySelector('dd a[href*="etsy.com/search?q="]')?.closest('dd');
       const dt = dd?.previousElementSibling;
       const dtSpan = dt?.querySelector('span');
@@ -599,7 +587,6 @@
           .filter(Boolean);
         if (tags.length) return tags.map(toTitleCase);
       }
-      // fallback: đọc trực tiếp từ onclick “Copy”
       const copyBtn = document.querySelector('dt button[onclick*="clipboard.writeText"]');
       if (copyBtn) {
         try{
@@ -623,40 +610,17 @@
     return `${title} ${tags.join(', ')}`;
   }
 
-  async function countGalleryImages(settings){
-    await sleep(settings.waitMs);
-    const urls = new Set();
-
-    document.querySelectorAll('button[aria-label^="Thumbnail"] img, li button img').forEach(img=>{
-      if(img.src) urls.add(cleanImgUrl(img.src));
-      const srcset = img.getAttribute('srcset')||'';
-      if (srcset) srcset.split(',').forEach(part=>{
-        const u=part.trim().split(' ')[0]; if(u) urls.add(cleanImgUrl(u));
-      });
-    });
-    document.querySelectorAll('img[src*="/il/"]').forEach(img=>{
-      if(img.src) urls.add(cleanImgUrl(img.src));
-    });
-
-    const count=[...urls].filter(Boolean).length;
-    info('gallery images detected', count);
-    return count || 1;
-  }
-  function cleanImgUrl(u){ try{ const url=new URL(u); url.search=''; return url.toString(); }catch{ return u.split('?')[0]; } }
-  function buildWindowsImagePaths(listingId, n, root){
-    const base = `${root}\\listing-${listingId}-images`;
-    const arr=[];
-    for(let i=1;i<=Math.min(7,n);i++) arr.push(`${base}\\${i}.jpeg`);
-    return arr;
+  function buildWindowsImageFolderPath(listingId, root){
+    return `${root}\\listing-${listingId}-images`;
   }
 
   // ============================
-  // CSV EXPORT
+  // CSV EXPORT (title, col2)
   // ============================
   function exportCSV(){
     const rows = gmGet(SKEY_ROWS, []);
     if(!rows.length){ toast('Chưa có dữ liệu để export'); return; }
-    const headers = ['title','img1','img2','img3','img4','img5','img6','img7'];
+    const headers = ['title','col2']; // col2 = downloadFolder\listing-<id>-images
     const esc = (v)=>`"${String(v??'').replace(/"/g,'""')}"`;
     const body = rows.map(r => headers.map(h => esc(r[h]||'')).join(',')).join('\n');
     const csv = headers.join(',') + '\n' + body;
@@ -664,13 +628,13 @@
     try{
       GM_download({
         url: URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'})),
-        name: 'etsy_listing_title_tags_images.csv'
+        name: 'etsy_listing_title_col2.csv'
       });
       toast(`📦 Exported ${rows.length} rows`);
     }catch{
       const a=document.createElement('a');
       a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-      a.download='etsy_listing_title_tags_images.csv';
+      a.download='etsy_listing_title_col2.csv';
       a.click();
     }
   }
