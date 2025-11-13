@@ -1,0 +1,1 @@
+for %F in ("listing-*-images_*.jpg" "listing-*-images__*.jpg") do @for /f "tokens=1,2 delims=__" %A in ("%~nxF") do @if "%B"=="" (for /f "tokens=1,2 delims=_" %C in ("%~nxF") do @mkdir "%C" 2>nul & move /y "%F" "%C\%D" >nul) else @(mkdir "%A" 2>nul & move /y "%F" "%A\%B" >nul)
