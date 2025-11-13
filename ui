@@ -1,16 +1,10 @@
 {
-  "Name": "new",
-  "CreationDate": "2025-11-7",
+  "Name": "listing temu",
+  "CreationDate": "2025-11-12",
   "Commands": [
     {
       "Command": "open",
       "Target": "https://seller.temu.com/products.html",
-      "Value": "",
-      "Description": ""
-    },
-    {
-      "Command": "comment",
-      "Target": "refresh // ",
       "Value": "",
       "Description": ""
     },
@@ -28,7 +22,7 @@
     },
     {
       "Command": "pause",
-      "Target": "1000",
+      "Target": "2000",
       "Value": "",
       "Description": "mở tab sản phẩm"
     },
@@ -56,26 +50,14 @@
       "Description": "click vào nút edit/copy listing"
     },
     {
-      "Command": "comment",
-      "Target": "executeScript_Sandbox // (function(){var popups=document.querySelectorAll('body > div');for(var i=0;i<popups.length;i++){var p=popups[i];var btns=p.querySelectorAll('li,div,span,button');for(var j=0;j<btns.length;j++){var b=btns[j];var t=(b.innerText||b.textContent||'').trim().toLowerCase();if(t && (t==='copy listing' || t.indexOf('copy listing')>-1)){b.click();return true;}}}return false;})();",
-      "Value": "",
-      "Description": "click vào nút edit/copy listing"
-    },
-    {
       "Command": "pause",
       "Target": "5000",
       "Value": "",
       "Description": "chờ tab mới mở"
     },
     {
-      "Command": "comment",
-      "Target": "store // 1000",
-      "Value": "!timeout_wait",
-      "Description": "chờ tab mới mở"
-    },
-    {
       "Command": "selectWindow",
-      "Target": "tab=1",
+      "Target": "title=Temu | Add new product",
       "Value": "",
       "Description": "CHUYỂN sang tab form edit"
     },
@@ -248,7 +230,7 @@
     },
     {
       "Command": "XClick",
-      "Target": "hwehf3_dpi_96.png",
+      "Target": "0oajnx_dpi_96.png",
       "Value": "",
       "Targets": [
         "xpath=//*[@id=\"detailImage\"]/div[2]/div/div/div[2]/div/div/svg/path",
@@ -257,8 +239,8 @@
       "Description": "Bấm nút mở hộp thoại Upload"
     },
     {
-      "Command": "pause",
-      "Target": "800",
+      "Command": "XType",
+      "Target": "${KEY_CTRL+KEY_L}",
       "Value": "",
       "Description": ""
     },
@@ -305,38 +287,14 @@
       "Description": "Chọn tất cả file ảnh trong thư mục"
     },
     {
-      "Command": "XType",
-      "Target": "${KEY_TAB}",
+      "Command": "comment",
+      "Target": "XType // ${KEY_TAB}",
       "Value": "",
       "Description": "Chọn tất cả file ảnh trong thư mục"
     },
     {
-      "Command": "XType",
-      "Target": "${KEY_TAB}",
-      "Value": "",
-      "Description": "Chọn tất cả file ảnh trong thư mục"
-    },
-    {
-      "Command": "XType",
-      "Target": "${KEY_TAB}",
-      "Value": "",
-      "Description": "Chọn tất cả file ảnh trong thư mục"
-    },
-    {
-      "Command": "XType",
-      "Target": "${KEY_TAB}",
-      "Value": "",
-      "Description": "Chọn tất cả file ảnh trong thư mục"
-    },
-    {
-      "Command": "XType",
-      "Target": "${KEY_TAB}",
-      "Value": "",
-      "Description": "Chọn tất cả file ảnh trong thư mục"
-    },
-    {
-      "Command": "XType",
-      "Target": "${KEY_TAB}",
+      "Command": "comment",
+      "Target": "XType // ${KEY_TAB}",
       "Value": "",
       "Description": "Chọn tất cả file ảnh trong thư mục"
     },
@@ -441,7 +399,7 @@
     },
     {
       "Command": "XClick",
-      "Target": "0p89yq_dpi_96.png",
+      "Target": "7t210m_dpi_96.png",
       "Value": "",
       "Description": ""
     },
@@ -512,9 +470,14 @@
       "Description": "Đợi upload xong (tuỳ dung lượng, tăng nếu cần)"
     },
     {
-      "Command": "XClick",
-      "Target": "0falau_dpi_96.png",
+      "Command": "click",
+      "Target": "xpath=/html/body/div[4]/div/div/div/div[3]/div[2]/div/div[2]/div/div",
       "Value": "",
+      "Targets": [
+        "xpath=/html/body/div[4]/div/div/div/div[3]/div[2]/div/div[2]/div/div",
+        "xpath=//div[3]/div[2]/div/div[2]/div/div",
+        "css=body > div.MDL_outerWrapper_123.MDL_modal_123 > div > div > div > div.MDL_bottom_123 > div.MDL_footer_123.MDL_footerModeReverse_123 > div > div.btn-3yOxL.primary-2pgGm.large-1eT_m.saveBtn-1kpR2 > div > div"
+      ],
       "Description": "Đợi upload xong (tuỳ dung lượng, tăng nếu cần)"
     },
     {
@@ -575,26 +538,15 @@
       "Description": ""
     },
     {
-      "Command": "click",
-      "Target": "xpath=//*[@id=\"shipmentLimitSecond\"]/div[2]/div/div/div/div/div/div/div/div/div/div/input",
+      "Command": "comment",
+      "Target": "click // xpath=//*[@id=\"shipmentLimitSecond\"]/div[2]/div/div/div/div/div/div/div/div/div/div/input",
       "Value": "",
-      "Targets": [
-        "xpath=//*[@id=\"shipmentLimitSecond\"]/div[2]/div/div/div/div/div/div/div/div/div/div/input",
-        "xpath=//input[@value='7']",
-        "xpath=//div[2]/div/div/div/div/div/div/div/div/div/div/input",
-        "css=#shipmentLimitSecond > div.Grid_col_123.Grid_colNotFixed_123.Form_itemWrapper_123 > div > div > div > div > div > div > div > div > div > div.IPT_inputBlockCell_123.ST_inputBlockCell_123 > input"
-      ],
       "Description": ""
     },
     {
-      "Command": "click",
-      "Target": "xpath=/html/body/div[2]/div/div/div/div/ul/li[7]",
+      "Command": "comment",
+      "Target": "click // xpath=/html/body/div[2]/div/div/div/div/ul/li[3]",
       "Value": "",
-      "Targets": [
-        "xpath=/html/body/div[2]/div/div/div/div/ul/li[7]",
-        "xpath=//li[7]",
-        "css=body > div.PT_outerWrapper_123.PP_outerWrapper_123.ST_dropdown_123.ST_largeDropdown_123.PT_dropdown_123.PT_portalBottomLeft_123.PT_inCustom_123.PP_dropdown_123 > div > div > div > div > ul > li.cIL_item_123.cIL_large_123.cIL_active_123.cIL_highlight_123.ST_itemRendererLabel_123.ST_itemRendererLabelChecked_123"
-      ],
       "Description": ""
     },
     {
