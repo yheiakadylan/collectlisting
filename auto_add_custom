@@ -1,0 +1,236 @@
+// ==UserScript==
+// @name         Temu - Mass Helper
+// @namespace    https://hapidecor-tools
+// @version      1.3
+// @description  List: Tự động highlight và đếm số lượng trước khi bấm Start. Detail: Auto Apply -> Publish -> Close.
+// @match        *://seller.temu.com/*
+// @run-at       document-idle
+// @grant        window.close
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    const LABEL_TEXT = 'Custom info required';
+    const WAIT_BEFORE_CLOSE = 3000;
+    const BTN_ID = 'tm-start-btn-v13'; // ID để định danh nút
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // =================================================================
+    // PHẦN 0: HÀM TOAST (Thông báo đẹp)
+    // =================================================================
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        Object.assign(toast.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
+            backgroundColor: type === 'error' ? '#d32f2f' : '#2e7d32',
+            color: '#fff', padding: '12px 24px', borderRadius: '8px',
+            zIndex: '1000000', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            fontSize: '15px', fontWeight: '500', opacity: '0', transition: 'opacity 0.3s', pointerEvents: 'none'
+        });
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.style.opacity = '1');
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => { if (document.body.contains(toast)) document.body.removeChild(toast); }, 300);
+        }, 3000);
+    }
+
+    // =================================================================
+    // PHẦN 1: LIST PAGE (Logic Mới)
+    // =================================================================
+
+    // 1. Hàm tìm các badges chưa xử lý
+    function findCustomBadges() {
+        const allDivs = Array.from(document.querySelectorAll('div, a'));
+        let badges = allDivs.filter((d) => d.textContent.trim() === LABEL_TEXT);
+        // Chỉ lấy những cái chưa được mở (dataset.tmOpened chưa có) và đang hiển thị
+        badges = badges.filter((b) => !b.dataset.tmOpened && b.offsetParent !== null);
+        return badges;
+    }
+
+    // 2. Hàm Highlight và cập nhật số lượng lên nút (Chạy liên tục)
+    function scanAndHighlightUI() {
+        const badges = findCustomBadges();
+        const btn = document.getElementById(BTN_ID);
+
+        // Highlight ngay lập tức
+        badges.forEach(badge => {
+            const row = badge.closest('tr');
+            // Nếu chưa tô màu thì tô ngay
+            if (row && row.style.outlineColor !== 'orange') {
+                row.style.outline = '2px solid orange';
+                row.style.transition = 'outline 0.3s';
+            }
+        });
+
+        // Cập nhật text cho nút
+        if (btn) {
+            if (badges.length > 0) {
+                btn.textContent = `🚀 START (${badges.length / 2} items)`;
+                btn.style.background = '#d32f2f'; // Màu đỏ khi có hàng
+            } 
+        }
+    }
+
+    // 3. Hàm tạo nút (chỉ chạy 1 lần đầu hoặc khi nút bị mất)
+    function createStartButtonForList() {
+        if (document.getElementById(BTN_ID)) return; // Nếu có rồi thì thôi
+
+        const btn = document.createElement('button');
+        btn.id = BTN_ID;
+        btn.textContent = '🚀 START (Scanning...)';
+        Object.assign(btn.style, {
+            position: 'fixed', right: '20px', top: '70px', zIndex: 999999,
+            padding: '10px 16px', background: '#777', color: '#fff',
+            border: 'none', borderRadius: '4px', cursor: 'pointer',
+            fontSize: '14px', fontWeight: 'bold', boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            minWidth: '160px'
+        });
+
+        btn.addEventListener('click', () => {
+            processScanClick();
+        });
+
+        document.body.appendChild(btn);
+    }
+
+    // 4. Hàm xử lý khi bấm nút Start
+    function processScanClick() {
+        const badges = findCustomBadges();
+        if (badges.length === 0) {
+            showToast('⚠️ Hiện tại không có sản phẩm nào cần xử lý!', 'error');
+            return;
+        }
+
+        showToast(`✅ Bắt đầu mở ${badges.length /2} tabs...`, 'success');
+
+        badges.forEach((badge, index) => {
+            // Đánh dấu đã mở để lần scan sau không đếm nữa
+            badge.dataset.tmOpened = '1';
+
+            // Đổi màu row sang xanh dương để biết là "Đang xử lý"
+            const row = badge.closest('tr');
+            if (row) row.style.outline = '2px solid #2196f3';
+
+            setTimeout(() => {
+                if (badge.tagName === 'DIV') {
+                    const parentLink = badge.closest('a');
+                    if (parentLink) parentLink.click();
+                    else badge.click();
+                } else {
+                    badge.click();
+                }
+            }, index * 1500);
+        });
+    }
+
+    // 5. Init trang List: Chạy lặp liên tục để update UI
+    function initProductsPageHelper() {
+        // Loop mỗi 1 giây: Tạo nút nếu thiếu + Scan highlight + Update số đếm
+        setInterval(() => {
+            if (document.body) {
+                createStartButtonForList();
+                scanAndHighlightUI();
+            }
+        }, 1000);
+    }
+
+    // =================================================================
+    // PHẦN 2: DETAIL PAGE (GIỮ NGUYÊN NHƯ V1.2)
+    // =================================================================
+
+    async function autoRunDetailTask() {
+        console.log('[TM Detail] Tab open. Waiting for variants...');
+        let variants = [];
+        for (let i = 0; i < 30; i++) {
+            variants = document.querySelectorAll('div[class*="skcList"] div[class*="skcItem"]');
+            if (variants.length > 0) break;
+            await sleep(1000);
+        }
+
+        if (variants.length === 0) {
+            console.warn('[TM Detail] Timeout: No variants found.');
+            return;
+        }
+
+        for (let i = 0; i < variants.length; i++) {
+            variants[i].click();
+            await sleep(1500);
+            const success = await clickImportButtonByXPath();
+            if (!success) console.warn(`[TM Detail] Variant ${i+1}: Không tìm thấy nút Import!`);
+        }
+
+        const publishBtn = findPublishButton();
+        if (publishBtn) {
+            publishBtn.click();
+            await sleep(1500);
+            clickConfirmPopup();
+            await sleep(WAIT_BEFORE_CLOSE);
+            window.close();
+        }
+    }
+
+    async function clickImportButtonByXPath() {
+        const xpath = "//div[contains(text(), 'Import customization template')]/ancestor::div[@role='button' or contains(@class, 'btn-')]";
+        const xpathFallback = "//div[contains(text(), 'Import customization template')]";
+        let result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        if (!result) result = document.evaluate(xpathFallback, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+
+        if (result) {
+            result.click();
+            await sleep(1000);
+            const dropdowns = document.querySelectorAll('body div.PT_dropdown_123, body ul.PT_menu-list_123');
+            let lastDropdown = dropdowns[dropdowns.length - 1];
+            if (!lastDropdown) {
+                const allUls = document.querySelectorAll('body > div > ul, body > div > div > ul');
+                if (allUls.length > 0) lastDropdown = allUls[allUls.length - 1];
+            }
+            if (lastDropdown) {
+                const option = lastDropdown.querySelector('li') || lastDropdown.querySelector('div[role="option"]');
+                if (option) {
+                    option.click();
+                    await sleep(2500);
+                    return true;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function findPublishButton() {
+        return document.querySelector('#mms-layout-content div.btnWrapper-3is1W div:nth-child(2) div.btn-3yOxL.primary-2pgGm.medium-Hwmr9') ||
+               Array.from(document.querySelectorAll('button, div')).find(el => el.textContent.trim() === 'Publish');
+    }
+
+    function clickConfirmPopup() {
+        const confirmBtn = Array.from(document.querySelectorAll('body div[class*="modal"] button, body div[class*="modal"] div'))
+                                .find(el => ['Confirm', 'OK'].includes(el.textContent.trim()));
+        if (confirmBtn) confirmBtn.click();
+    }
+
+    function router() {
+        const path = location.pathname;
+        if (path.includes('/products')) {
+            initProductsPageHelper();
+            return;
+        }
+        if (document.title.includes('Custom product') || path.includes('/goods/custom/')) {
+             setTimeout(autoRunDetailTask, 1500);
+        } else {
+            const checkTitle = setInterval(() => {
+                if (document.title.includes('Custom product') || document.querySelector('#mms-layout-content form')) {
+                    clearInterval(checkTitle);
+                    autoRunDetailTask();
+                }
+            }, 1000);
+        }
+    }
+
+    router();
+})();
