@@ -1,0 +1,1281 @@
+// ==UserScript==
+// @name         Etsy → Temu 226-column CSV (Title+Tags+Images, Variant A×B, Template+Logs)
+// @namespace    https://hapidecor-tools
+// @version      1.2.0
+// @description  Đọc TXT (mỗi dòng 1 URL listing). Tự mở từng listing Etsy, lấy Title + tối đa 13 tags, lấy list ảnh (bỏ video), rồi build CSV Temu 226 cột. Variant Theme = OptionA x OptionB (chỉ chọn từ Color/Size/Style/...); Base Price theo bảng A×B. Ảnh chỉ fill vào Detail Images URL & SKU Images URL. Reference Link = rỗng. Template tĩnh lưu IndexedDB. Có panel log & UI generate variant.
+// @match        *://*.etsy.com/*
+// @run-at       document-idle
+// @grant        GM_getValue
+// @grant        GM_setValue
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    // ========= STORAGE KEYS =========
+    const K_CFG   = 'temu_cfg_v2';
+    const K_ROWS  = 'temu_rows_v2';   // array of rows (array<string>)
+    const K_QUEUE = 'temu_queue_v2';  // array of URLs
+    const K_STATE = 'temu_state_v2';  // 'idle' | 'running'
+    const K_LOGS  = 'temu_logs_v2';
+
+    // ========= ALLOWED VARIANT FIELDS =========
+    const ALLOWED_VARIANTS = [
+        'Color',
+        'Size',
+        'Style',
+        'Material',
+        'Flavors',
+        'Applicable People',
+        'Capacity',
+        'Composition',
+        'Weight',
+        'Items',
+        'Quantity',
+        'Model',
+        'Hair Length'
+    ];
+
+    const DEF_CFG = {
+        waitMs: 300,
+        optAName: 'Quantity',           // phải là 1 trong ALLOWED_VARIANTS
+        optAValues: '1,2,3,5,10',
+        optBName: 'Size',               // phải là 1 trong ALLOWED_VARIANTS
+        optBValues: '3.5 in,5 in',
+        combos: [] // [{aVal,bVal,price}]
+    };
+
+    // ========= IndexedDB (template tĩnh) =========
+    const TDB_NAME = 'temuTemplateDB_v1';
+    const TDB_STORE = 'templates';
+    const TDB_KEY = 'default';
+
+    function openTemplateDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(TDB_NAME, 1);
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(TDB_STORE)) {
+                    db.createObjectStore(TDB_STORE);
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbGetTemplate() {
+        try {
+            const db = await openTemplateDB();
+            return await new Promise((resolve, reject) => {
+                const tx = db.transaction(TDB_STORE, 'readonly');
+                const store = tx.objectStore(TDB_STORE);
+                const g = store.get(TDB_KEY);
+                g.onsuccess = () => resolve(g.result || {});
+                g.onerror = () => reject(g.error);
+            });
+        } catch (e) {
+            addLog('error', 'idbGetTemplate fail: ' + e);
+            return {};
+        }
+    }
+
+    async function idbSaveTemplate(obj) {
+        try {
+            const db = await openTemplateDB();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(TDB_STORE, 'readwrite');
+                const store = tx.objectStore(TDB_STORE);
+                const p = store.put(obj || {}, TDB_KEY);
+                p.onsuccess = () => resolve();
+                p.onerror = () => reject(p.error);
+            });
+            addLog('info', 'Saved template to IndexedDB');
+        } catch (e) {
+            addLog('error', 'idbSaveTemplate fail: ' + e);
+        }
+    }
+
+    // ========= HEADERS: 226 cột =========
+    const HEADERS = [
+        "Goods Id",
+        "Sku Id",
+        "Status",
+        "Details",
+        "Category",
+        "Product type",
+        "Customization processing technique",
+        "Primary technique",
+        "Secondary technique",
+        "Secondary technique",
+        "Product Name",
+        "Contribution Goods",
+        "Contribution SKU",
+        "Update or Add",
+        "Goods Id",
+        "Sku Id",
+        "Brand",
+        "Trademark",
+        "Product Description",
+        "Bullet Point",
+        "Bullet Point",
+        "Bullet Point",
+        "Bullet Point",
+        "Bullet Point",
+        "Bullet Point",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Images URL",
+        "Detail Video URL",
+        "121 - Material",
+        "7169 - Canvas Type",
+        "130 - Theme",
+        "19 - Style",
+        "96 - Occasion",
+        "1561 - Power Supply",
+        "1485 - Plug Type",
+        "1132 - Operating Voltage",
+        "1562 - Battery Quantity",
+        "137 - Battery Type",
+        "1563 - Battery Included or Not",
+        "2147 - Rechargeable Battery",
+        "2154 - Solar Battery Type",
+        "111 - Batteries Included",
+        "2028 - Battery Capacity (mAh) - value",
+        "2028 - Battery Capacity (mAh) - unit",
+        "2232 - Whether There Are Feathers",
+        "2233 - Feather Material",
+        "3699 - Accessories And Accessory Battery Types Used",
+        "15 - Composition:Acrylic",
+        "15 - Composition:Cotton",
+        "15 - Composition:Linen",
+        "15 - Composition:Modal",
+        "15 - Composition:Nylon",
+        "15 - Composition:Polyester",
+        "15 - Composition:Silk",
+        "15 - Composition:Elastane",
+        "15 - Composition:Viscose",
+        "15 - Composition:Acetate",
+        "15 - Composition:Lyocell",
+        "15 - Composition:Other Fibers",
+        "15 - Composition:Polyurethane",
+        "15 - Composition:Polypropylene",
+        "15 - Composition:Polyamide",
+        "15 - Composition:Iron",
+        "15 - Composition:cast iron",
+        "1117 - Applicable Age Group",
+        "2155 - Laser Type",
+        "2156 - Laser Power",
+        "659 - Artwork Surface Material",
+        "475 - Frame Type",
+        "186 - Frame Material",
+        "3981 - Thickness (cm) - value",
+        "3981 - Thickness (cm) - unit",
+        "3673 - Language Type",
+        "131 - Shape",
+        "Variation Theme",
+        "Color",
+        "Size",
+        "Style",
+        "Material",
+        "Flavors",
+        "Applicable People",
+        "Capacity",
+        "Composition",
+        "Weight",
+        "Items",
+        "Quantity",
+        "Model",
+        "Hair Length",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "SKU Images URL",
+        "Dimensions",
+        "Quantity",
+        "Base Price - USD",
+        "Reference Link",
+        "List Price - USD",
+        "Weight - lb",
+        "Length - in",
+        "Width - in",
+        "Height - in",
+        "SKU type",
+        "Individually packed",
+        "Total packaging quantity",
+        "Packaging unit",
+        "Total item quantity",
+        "Item unit",
+        "Net content",
+        "Total net content",
+        "Net content unit",
+        "External Product ID Type",
+        "External Product ID",
+        "Shipping Template",
+        "Handling Time",
+        "Import Designation",
+        "Fulfillment Channel",
+        "Country/Region of Origin",
+        "Province of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Label For Country/Region of Origin",
+        "Product Guide - English",
+        "California Proposition 65 Warning Type",
+        "California Proposition 65 Chemical Names"
+    ];
+
+    // ========= GM helpers & logs =========
+    function gmGet(key, def) {
+        try {
+            const v = GM_getValue(key);
+            return v === undefined ? def : v;
+        } catch {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : def;
+        }
+    }
+    function gmSet(key, val) {
+        try { GM_setValue(key, val); }
+        catch { localStorage.setItem(key, JSON.stringify(val)); }
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function addLog(level, msg) {
+        const logs = gmGet(K_LOGS, []);
+        const line = `[${new Date().toISOString()}] ${level.toUpperCase()} ${msg}`;
+        logs.push(line);
+        if (logs.length > 400) logs.splice(0, logs.length - 400);
+        gmSet(K_LOGS, logs);
+
+        const box = document.getElementById('temu_logs');
+        if (box) {
+            box.textContent = logs.slice(-80).join('\n');
+            box.scrollTop = box.scrollHeight;
+        }
+        if (level === 'error') console.error('[Temu]', msg);
+        else console.log('[Temu]', msg);
+    }
+
+    // ========= URL helpers =========
+    function isListingUrl(u) {
+        return /\/listing\/\d+/.test(u || '');
+    }
+    function getListingId(u) {
+        try {
+            const m = new URL(u, location.origin).pathname.match(/\/listing\/(\d+)/);
+            return m ? m[1] : '';
+        } catch {
+            return '';
+        }
+    }
+    function canonicalListingUrl(u) {
+        const id = getListingId(u);
+        if (id) return `https://www.etsy.com/listing/${id}`;
+        try {
+            const url = new URL(u, location.origin);
+            url.hash = '';
+            url.search = '';
+            return url.toString();
+        } catch {
+            return String(u).split('#')[0].split('?')[0];
+        }
+    }
+
+    function toTitleCase(s) {
+        return (s || '').replace(/\S+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    }
+
+    function prettyTitleWithTags(title, tags) {
+        const uniq = [];
+        const seen = new Set();
+        for (const t of tags) {
+            const x = toTitleCase(String(t || '').trim());
+            if (x && !seen.has(x.toLowerCase())) {
+                seen.add(x.toLowerCase());
+                uniq.push(x);
+            }
+            if (uniq.length >= 13) break;
+        }
+        if (!uniq.length) return title || '';
+        return `${title || ''} — ${uniq.join(', ')}`;
+    }
+
+    function slugOptionValue(v) {
+        return String(v || '').replace(/\s+/g, '');
+    }
+
+    async function waitFor(sel, timeout = 8000, step = 120) {
+        const t = Date.now() + timeout;
+        while (Date.now() < t) {
+            const el = document.querySelector(sel);
+            if (el) return el;
+            await sleep(step);
+        }
+        return null;
+    }
+
+    // ========= Tag extractor =========
+    async function getTagsUpTo13(timeout = 12000) {
+        const deadline = Date.now() + timeout;
+        while (Date.now() < deadline) {
+            const dd = document.querySelector('dd a[href*="etsy.com/search?q="]')?.closest('dd');
+            const dt = dd?.previousElementSibling;
+            const dtSpan = dt?.querySelector('span');
+            if (dd && dtSpan && /Tags/i.test(dtSpan.textContent || '')) {
+                const tags = Array.from(dd.querySelectorAll('a[href*="etsy.com/search?q="]'))
+                    .map(a => (a.textContent || '').trim())
+                    .filter(Boolean);
+                if (tags.length) return tags.slice(0, 13);
+            }
+            const copyBtn = document.querySelector('dt button[onclick*="clipboard.writeText"]');
+            if (copyBtn) {
+                try {
+                    const attr = copyBtn.getAttribute('onclick') || '';
+                    const m = attr.match(/clipboard\.writeText\('([^']+)'\)/i);
+                    if (m && m[1]) {
+                        const list = m[1].split(/\s*,\s*/).filter(Boolean);
+                        if (list.length) return list.slice(0, 13);
+                    }
+                } catch { /* ignore */ }
+            }
+            await sleep(150);
+        }
+        return [];
+    }
+
+    // ========= Media collector (Images + Video) =========
+    function collectMedia() {
+        const container =
+              document.querySelector('[data-carousel-pagination-list]')?.closest('.wt-position-relative') ||
+              document.querySelector('.image-carousel-container') ||
+              document;
+
+        // IMAGES (bỏ thumbnail video)
+        const items = Array.from(
+            container.querySelectorAll('[data-carousel-pagination-list] [data-carousel-pagination-item]')
+        )
+            .filter(li =>
+                !li.hasAttribute('data-carousel-thumbnail-video') &&
+                !(li.getAttribute('data-image-id') || '').startsWith('listing-video')
+            )
+            .sort(
+                (a, b) =>
+                    (parseInt(a.getAttribute('data-index') || '0', 10) -
+                     parseInt(b.getAttribute('data-index') || '0', 10))
+            );
+
+        const seen = new Set();
+        const images = [];
+
+        for (const li of items) {
+            const iid = li.getAttribute('data-image-id') || '';
+            if (iid && seen.has(iid)) continue;
+            if (iid) seen.add(iid);
+
+            const img = li.querySelector('img');
+            let s = img?.getAttribute('data-src-zoom-image') ||
+                img?.getAttribute('data-original-image') ||
+                img?.getAttribute('src') ||
+                img?.getAttribute('data-src-delay') ||
+                '';
+            if (!s) continue;
+            s = s.split('?')[0];
+            s = s.replace(/\/il_\d+x\d+\./i, '/il_fullxfull.');
+            if (/etsystatic\.com/i.test(s)) {
+                images.push(s);
+            }
+        }
+
+        // VIDEO
+        let video = '';
+        try {
+            const vidSource =
+                  container.querySelector('[data-carousel-pane][data-video-pane] video source[src]') ||
+                  container.querySelector('[data-carousel-pane][data-video-pane] video[src]') ||
+                  container.querySelector('video[data-player-name="etsy-listing-video"] source[src]') ||
+                  container.querySelector('video[data-player-name="etsy-listing-video"][src]');
+
+            if (vidSource) {
+                video = (vidSource.getAttribute('src') || '').split('?')[0].trim();
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        return { images, video };
+    }
+
+    // ========= Variant combos =========
+    function buildVariantCombosFromCfg(cfg) {
+        const Avals = (cfg.optAValues || '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+        const Bvals = (cfg.optBValues || '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        const A = Avals.length ? Avals : [''];
+        const B = Bvals.length ? Bvals : [''];
+
+        const priceMap = new Map();
+        if (cfg.combos && Array.isArray(cfg.combos)) {
+            for (const c of cfg.combos) {
+                const key = `${c.aVal || ''}\u0001${c.bVal || ''}`;
+                priceMap.set(key, c.price || '');
+            }
+        }
+
+        const combos = [];
+        for (const a of A) {
+            for (const b of B) {
+                const key = `${a || ''}\u0001${b || ''}`;
+                const price = priceMap.has(key) ? priceMap.get(key) : '';
+                combos.push({ aVal: a, bVal: b, price });
+            }
+        }
+        return combos;
+    }
+
+    // ========= Panel UI =========
+    function createPanel() {
+        if (document.getElementById('temu_panel')) return;
+
+        const style = document.createElement('style');
+        style.textContent = `
+#temu_panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 460px;
+  max-height: 95vh;
+  z-index: 2147483646;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  box-shadow: 0 18px 45px rgba(0,0,0,.6);
+  overflow: hidden;
+}
+#temu_panel header {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #020617;
+  border-bottom: 1px solid #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+}
+#temu_panel header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#temu_panel main {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+#temu_panel input,
+#temu_panel select {
+  width: 100%;
+  box-sizing: border-box;
+  background: #020617;
+  color: #e5e7eb;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+#temu_panel button {
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.temu-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.temu-row > label {
+  flex: 0 0 90px;
+}
+.temu-row > div {
+  flex: 1;
+}
+.temu-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.temu-buttons button.primary {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+.temu-buttons button.secondary {
+  background: #4b5563;
+  color: #e5e7eb;
+}
+.temu-buttons button.danger {
+  background: #b91c1c;
+  color: #fff;
+}
+.temu-small {
+  font-size: 11px;
+  color: #9ca3af;
+}
+#temu_stats {
+  font-size: 11px;
+  color: #9ca3af;
+}
+#temu_logs {
+  font-family: ui-monospace, Menlo, Consolas, "SF Mono", monospace;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  padding: 6px;
+  margin-top: 4px;
+  height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+}
+`;
+        document.head.appendChild(style);
+
+        // option html cho dropdown A/B
+        const variantOptionsHTML =
+            `<option value="">(Không dùng)</option>` +
+            ALLOWED_VARIANTS.map(v => `<option value="${v}">${v}</option>`).join('');
+
+        const panel = document.createElement('div');
+        panel.id = 'temu_panel';
+        panel.innerHTML = `
+<header>
+  <span>🧩 Etsy → Temu CSV</span>
+  <span>
+    <button id="temu_min" style="background:#111827;color:#e5e7eb;padding:2px 6px;">−</button>
+    <button id="temu_close" style="background:#111827;color:#e5e7eb;padding:2px 6px;">×</button>
+  </span>
+</header>
+<main>
+  <div class="temu-row">
+    <label>State</label>
+    <div><input id="temu_state" disabled /></div>
+  </div>
+  <div class="temu-row">
+    <label>Wait (ms)</label>
+    <div><input id="temu_wait" type="number" min="0" /></div>
+  </div>
+
+  <div class="temu-row">
+    <label>TXT URLs</label>
+    <div>
+      <input id="temu_file" type="file" accept=".txt" />
+      <div class="temu-small">Mỗi dòng 1 URL listing Etsy</div>
+    </div>
+  </div>
+
+  <div class="temu-row">
+    <label>Option A</label>
+    <div>
+      <select id="temu_optA_name" style="margin-bottom:4px;">
+        ${variantOptionsHTML}
+      </select>
+      <input id="temu_optA_vals" placeholder="vd: 1,2,3,5,10" />
+    </div>
+  </div>
+
+  <div class="temu-row">
+    <label>Option B</label>
+    <div>
+      <select id="temu_optB_name" style="margin-bottom:4px;">
+        ${variantOptionsHTML}
+      </select>
+      <input id="temu_optB_vals" placeholder="vd: 3.5 in,5 in" />
+    </div>
+  </div>
+
+  <div class="temu-buttons">
+    <button id="temu_gen_variants" class="secondary">Generate Variant & Giá</button>
+    <button id="temu_open_template" class="secondary">Template Settings</button>
+  </div>
+
+  <div class="temu-buttons">
+    <button id="temu_load_txt" class="secondary">Load TXT</button>
+    <button id="temu_start" class="primary">Start</button>
+    <button id="temu_stop" class="secondary">Stop</button>
+    <button id="temu_export" class="secondary">Export CSV</button>
+    <button id="temu_clear" class="danger">Clear</button>
+  </div>
+
+  <div id="temu_stats">Rows: 0 | Queue: 0</div>
+  <div class="temu-small">
+    Title = Title — Tag1..Tag13. Ảnh → Detail Images URL; SKU image = ảnh đầu tiên.
+    Base Price = giá theo Variant A×B. Reference Link = rỗng.
+    Option A/B chỉ chọn trong: Color, Size, Style, Material, Flavors, Applicable People, Capacity, Composition, Weight, Items, Quantity, Model, Hair Length.
+  </div>
+
+  <pre id="temu_logs">(logs)</pre>
+</main>
+`;
+        document.body.appendChild(panel);
+
+        // draggable
+        (function makeDraggable() {
+            const header = panel.querySelector('header');
+            let dragging = false;
+            let sx = 0, sy = 0, ox = 0, oy = 0;
+            header.addEventListener('mousedown', (e) => {
+                dragging = true;
+                sx = e.clientX;
+                sy = e.clientY;
+                const rect = panel.getBoundingClientRect();
+                ox = rect.left;
+                oy = rect.top;
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - sx;
+                const dy = e.clientY - sy;
+                panel.style.left = ox + dx + 'px';
+                panel.style.top = oy + dy + 'px';
+            });
+            window.addEventListener('mouseup', () => dragging = false);
+        })();
+
+        const cfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+        const $ = (sel) => panel.querySelector(sel);
+
+        $('#temu_state').value = gmGet(K_STATE, 'idle');
+        $('#temu_wait').value = cfg.waitMs;
+        $('#temu_optA_name').value = ALLOWED_VARIANTS.includes(cfg.optAName) ? cfg.optAName : '';
+        $('#temu_optA_vals').value = cfg.optAValues;
+        $('#temu_optB_name').value = ALLOWED_VARIANTS.includes(cfg.optBName) ? cfg.optBName : '';
+        $('#temu_optB_vals').value = cfg.optBValues;
+
+        function updateStats() {
+            const rows = gmGet(K_ROWS, []);
+            const q = gmGet(K_QUEUE, []);
+            $('#temu_stats').textContent = `Rows: ${rows.length} | Queue: ${q.length}`;
+        }
+        function updateState() {
+            $('#temu_state').value = gmGet(K_STATE, 'idle');
+        }
+        window.__temu_update_stats = updateStats;
+        window.__temu_update_state = updateState;
+
+        // load logs
+        const logs = gmGet(K_LOGS, []);
+        const logBox = document.getElementById('temu_logs');
+        logBox.textContent = logs.slice(-80).join('\n');
+
+        updateStats();
+
+        $('#temu_min').onclick = () => {
+            const main = panel.querySelector('main');
+            main.style.display = main.style.display === 'none' ? '' : 'none';
+        };
+        $('#temu_close').onclick = () => panel.remove();
+
+        $('#temu_load_txt').onclick = async () => {
+            const fileInput = $('#temu_file');
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                alert('Chọn file .txt trước');
+                return;
+            }
+            const text = await file.text();
+            const urls = text.split(/\r?\n/)
+                .map(s => s.trim())
+                .filter(Boolean)
+                .map(canonicalListingUrl)
+                .filter(isListingUrl);
+            gmSet(K_QUEUE, urls);
+            gmSet(K_ROWS, []); // reset rows
+            updateStats();
+            addLog('info', `Loaded ${urls.length} URLs from TXT`);
+            alert(`Đã nạp ${urls.length} URL`);
+        };
+
+        $('#temu_gen_variants').onclick = () => {
+            const newCfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+            newCfg.waitMs     = parseInt($('#temu_wait').value || '0', 10) || 0;
+            newCfg.optAName   = $('#temu_optA_name').value || '';
+            newCfg.optAValues = $('#temu_optA_vals').value || '';
+            newCfg.optBName   = $('#temu_optB_name').value || '';
+            newCfg.optBValues = $('#temu_optB_vals').value || '';
+            gmSet(K_CFG, newCfg);
+
+            openVariantDialog();
+        };
+
+        $('#temu_open_template').onclick = () => openTemplateDialog();
+
+        $('#temu_start').onclick = () => {
+            const newCfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+            newCfg.waitMs     = parseInt($('#temu_wait').value || '0', 10) || 0;
+            newCfg.optAName   = $('#temu_optA_name').value || '';
+            newCfg.optAValues = $('#temu_optA_vals').value || '';
+            newCfg.optBName   = $('#temu_optB_name').value || '';
+            newCfg.optBValues = $('#temu_optB_vals').value || '';
+
+            if (newCfg.optAName && !ALLOWED_VARIANTS.includes(newCfg.optAName)) {
+                alert('Option A phải nằm trong list variant cho phép của Temu.');
+                return;
+            }
+            if (newCfg.optBName && !ALLOWED_VARIANTS.includes(newCfg.optBName)) {
+                alert('Option B phải nằm trong list variant cho phép của Temu.');
+                return;
+            }
+
+            gmSet(K_CFG, newCfg);
+
+            const q = gmGet(K_QUEUE, []);
+            if (!q.length) {
+                alert('Queue trống. Hãy load TXT trước.');
+                return;
+            }
+            gmSet(K_STATE, 'running');
+            updateState();
+            addLog('info', 'START crawling');
+            alert('Bắt đầu chạy. Script sẽ tự nhảy qua từng listing.');
+            scheduleStep();
+        };
+
+        $('#temu_stop').onclick = () => {
+            gmSet(K_STATE, 'idle');
+            updateState();
+            addLog('info', 'STOP by user');
+            alert('Đã stop.');
+        };
+
+        $('#temu_export').onclick = exportCSV;
+        $('#temu_clear').onclick = () => {
+            gmSet(K_QUEUE, []);
+            gmSet(K_ROWS, []);
+            gmSet(K_STATE, 'idle');
+            gmSet(K_LOGS, []);
+            updateState();
+            updateStats();
+            const logBox2 = document.getElementById('temu_logs');
+            logBox2.textContent = '';
+            alert('Đã clear queue, rows, logs.');
+        };
+    }
+
+    // ========= Variant dialog =========
+    function openVariantDialog() {
+        const old = document.getElementById('temu_variant_dialog');
+        if (old) old.remove();
+
+        const cfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+        const combos = buildVariantCombosFromCfg(cfg);
+
+        const dlg = document.createElement('div');
+        dlg.id = 'temu_variant_dialog';
+        Object.assign(dlg.style, {
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 2147483647,
+            width: '520px',
+            maxHeight: '80vh',
+            background: '#020617',
+            color: '#e5e7eb',
+            borderRadius: '12px',
+            border: '1px solid #1f2937',
+            boxShadow: '0 18px 45px rgba(0,0,0,.6)',
+            display: 'flex',
+            flexDirection: 'column',
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif',
+            fontSize: '12px'
+        });
+
+        dlg.innerHTML = `
+      <div style="padding:8px 12px;border-bottom:1px solid #1f2937;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:600;">Variant A×B & Giá</div>
+        <button id="tv_close" style="background:#111827;color:#e5e7eb;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;">×</button>
+      </div>
+      <div style="padding:8px;flex:1;overflow:auto;">
+        <div style="margin-bottom:6px;font-size:11px;color:#9ca3af;">Tự sinh tất cả tổ hợp A×B, mỗi dòng nhập 1 giá.</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">#</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">Option A</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">Option B</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">Base Price</th>
+            </tr>
+          </thead>
+          <tbody id="tv_body"></tbody>
+        </table>
+      </div>
+      <div style="padding:8px;border-top:1px solid #1f2937;display:flex;justify-content:flex-end;gap:8px;">
+        <button id="tv_save" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600;">Save</button>
+      </div>
+    `;
+        document.body.appendChild(dlg);
+
+        const tbody = dlg.querySelector('#tv_body');
+        tbody.innerHTML = '';
+
+        combos.forEach((combo, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;color:#9ca3af;width:30px;">${idx + 1}</td>
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;">${combo.aVal || ''}</td>
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;">${combo.bVal || ''}</td>
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;">
+          <input data-idx="${idx}" style="width:100%;box-sizing:border-box;background:#020617;color:#e5e7eb;border-radius:6px;border:1px solid #1f2937;padding:4px 6px;font-size:12px;" value="${combo.price || ''}">
+        </td>
+      `;
+            tbody.appendChild(tr);
+        });
+
+        dlg.querySelector('#tv_close').onclick = () => dlg.remove();
+        dlg.querySelector('#tv_save').onclick = () => {
+            const newCfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+            const pricesInputs = dlg.querySelectorAll('input[data-idx]');
+            const newCombos = combos.map(c => Object.assign({}, c));
+            pricesInputs.forEach(inp => {
+                const i = parseInt(inp.getAttribute('data-idx'), 10);
+                newCombos[i].price = inp.value.trim();
+            });
+            newCfg.combos = newCombos;
+            gmSet(K_CFG, newCfg);
+            addLog('info', `Saved ${newCombos.length} variant combos`);
+            alert('Đã lưu Variant & Giá.');
+            dlg.remove();
+        };
+    }
+
+    // ========= Template dialog =========
+    async function openTemplateDialog() {
+        const old = document.getElementById('temu_template_dialog');
+        if (old) old.remove();
+
+        const tmpl = await idbGetTemplate();
+
+        const dlg = document.createElement('div');
+        dlg.id = 'temu_template_dialog';
+        Object.assign(dlg.style, {
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 2147483647,
+            width: '780px',
+            maxHeight: '80vh',
+            background: '#020617',
+            color: '#e5e7eb',
+            borderRadius: '12px',
+            border: '1px solid #1f2937',
+            boxShadow: '0 18px 45px rgba(0,0,0,.6)',
+            display: 'flex',
+            flexDirection: 'column',
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif',
+            fontSize: '12px'
+        });
+
+        dlg.innerHTML = `
+      <div style="padding:8px 12px;border-bottom:1px solid #1f2937;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:600;">Temu Template Settings (tĩnh, lưu IndexedDB)</div>
+        <button id="tt_close" style="background:#111827;color:#e5e7eb;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;">×</button>
+      </div>
+      <div style="padding:8px;flex:1;overflow:auto;">
+        <div style="margin-bottom:6px;font-size:11px;color:#9ca3af;">
+          * Mỗi dòng là 1 cột CSV (theo STT). Các cột động (Title+Tag, Ảnh, Contribution, Variation, Base Price, Reference Link) sẽ bị override khi crawl.
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">STT</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">Column</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #1f2937;">Value</th>
+            </tr>
+          </thead>
+          <tbody id="tt_body"></tbody>
+        </table>
+      </div>
+      <div style="padding:8px;border-top:1px solid #1f2937;display:flex;justify-content:flex-end;gap:8px;">
+        <button id="tt_save" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600;">Save</button>
+      </div>
+    `;
+        document.body.appendChild(dlg);
+
+        const dynamicBaseNames = new Set([
+            'Product Name',
+            'Contribution Goods',
+            'Contribution SKU',
+            'Detail Images URL',
+            'SKU Images URL',
+            'Variation Theme',
+            'Base Price - USD',
+            'Reference Link'
+        ]);
+
+        const tbody = dlg.querySelector('#tt_body');
+
+        for (let i = 0; i < HEADERS.length; i++) {
+            const headerName = HEADERS[i];
+            const stt = i + 1;
+            const key = String(i);
+            const value = tmpl[key] || '';
+            const isDynamic = dynamicBaseNames.has(headerName);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;width:40px;color:#9ca3af;">${stt}</td>
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;">${headerName}${isDynamic ? ' <span style="color:#f97316;font-size:11px;">(auto)</span>' : ''}</td>
+        <td style="padding:3px 4px;border-bottom:1px solid #111827;">
+          <input data-idx="${i}" ${isDynamic ? 'disabled' : ''} style="width:100%;box-sizing:border-box;background:#020617;color:#e5e7eb;border-radius:6px;border:1px solid #1f2937;padding:4px 6px;font-size:12px;" value="${value.replace(/"/g, '&quot;')}">
+        </td>
+      `;
+            tbody.appendChild(tr);
+        }
+
+        dlg.querySelector('#tt_close').onclick = () => dlg.remove();
+        dlg.querySelector('#tt_save').onclick = async () => {
+            const newTmpl = {};
+            const inputs = dlg.querySelectorAll('input[data-idx]');
+            inputs.forEach(inp => {
+                const idx = inp.getAttribute('data-idx');
+                const v = inp.value.trim();
+                if (v) newTmpl[idx] = v;
+            });
+            await idbSaveTemplate(newTmpl);
+            alert('Đã lưu template vào IndexedDB.');
+            dlg.remove();
+        };
+    }
+
+    // ========= CSV Export (UTF-8 BOM để không lỗi ký tự) =========
+    function exportCSV() {
+        const rows = gmGet(K_ROWS, []);
+        if (!rows.length) {
+            alert('Chưa có row nào để export.');
+            return;
+        }
+        const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+        const headerLine = HEADERS.map(esc).join(',');
+        const bodyLines = rows.map(r =>
+            HEADERS.map((_, i) => esc(r[i] == null ? '' : r[i])).join(',')
+        );
+        // THÊM BOM UTF-8 để Excel & Temu đọc tiếng Việt đúng
+        const csv = '\uFEFF' + headerLine + '\n' + bodyLines.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'temu_etsy_226cols.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        addLog('info', `Exported CSV with ${rows.length} rows`);
+    }
+
+    // ========= BUILD ROWS FOR CURRENT LISTING =========
+    async function handleCurrentListing() {
+        const cfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+        const combos = buildVariantCombosFromCfg(cfg);
+        const template = await idbGetTemplate();
+
+        const url = location.href;
+        const id = getListingId(url);
+        if (!id) {
+            addLog('error', 'Không lấy được listing ID từ URL: ' + url);
+            return;
+        }
+
+        addLog('info', `Handle listing ${id}`);
+
+        const titleNode = await waitFor('h1[data-buy-box-listing-title="true"], h1', 8000, 120);
+        const rawTitle = (titleNode?.textContent || '').trim();
+        const tags = await getTagsUpTo13(12000);
+        const fullTitle = prettyTitleWithTags(rawTitle, tags);
+
+        const { images, video } = collectMedia();
+        addLog(
+            'info',
+            `Title: "${fullTitle.slice(0,50)}..." | Images: ${images.length} | Video: ${video ? 'YES' : 'NO'}`
+        );
+
+        const rows = gmGet(K_ROWS, []);
+
+        const idxProductName = HEADERS.indexOf('Product Name');
+        const idxContrGoods  = HEADERS.indexOf('Contribution Goods');
+        const idxContrSku    = HEADERS.indexOf('Contribution SKU');
+        const idxVarTheme    = HEADERS.indexOf('Variation Theme');
+        const idxBasePrice   = HEADERS.indexOf('Base Price - USD');
+        const idxRefLink     = HEADERS.indexOf('Reference Link');
+        const idxVideo       = HEADERS.indexOf('Detail Video URL');
+
+        const idxDetailImgs = [];
+        const idxSkuImgs = [];
+        for (let i = 0; i < HEADERS.length; i++) {
+            if (HEADERS[i] === 'Detail Images URL') idxDetailImgs.push(i);
+            if (HEADERS[i] === 'SKU Images URL') idxSkuImgs.push(i);
+        }
+
+        const idxOptACol = cfg.optAName ? HEADERS.indexOf(cfg.optAName) : -1;
+        const idxOptBCol = cfg.optBName ? HEADERS.indexOf(cfg.optBName) : -1;
+
+        if (cfg.optAName && idxOptACol < 0) {
+            addLog('error', `Không tìm thấy cột variant cho Option A = "${cfg.optAName}"`);
+        }
+        if (cfg.optBName && idxOptBCol < 0) {
+            addLog('error', `Không tìm thấy cột variant cho Option B = "${cfg.optBName}"`);
+        }
+
+        let variantTheme = '';
+        if (cfg.optAName && cfg.optBName) {
+            // 2 lựa chọn nhân lại → dùng "A x B"
+            variantTheme = `${cfg.optAName} x ${cfg.optBName}`;
+        } else if (cfg.optAName) {
+            variantTheme = cfg.optAName;
+        } else if (cfg.optBName) {
+            variantTheme = cfg.optBName;
+        }
+
+        combos.forEach(combo => {
+            const row = new Array(HEADERS.length).fill('');
+
+            // template tĩnh
+            for (const k of Object.keys(template)) {
+                const idx = parseInt(k, 10);
+                if (idx >= 0 && idx < HEADERS.length) {
+                    row[idx] = template[k];
+                }
+            }
+
+            // dynamic fields
+            if (idxProductName >= 0) row[idxProductName] = fullTitle;
+            if (idxContrGoods  >= 0) row[idxContrGoods]  = id;
+
+            const skuParts = [id];
+            if (combo.aVal) skuParts.push(slugOptionValue(combo.aVal));
+            if (combo.bVal) skuParts.push(slugOptionValue(combo.bVal));
+            const sku = skuParts.join('-');
+            if (idxContrSku >= 0) row[idxContrSku] = sku;
+
+            if (idxVarTheme >= 0 && variantTheme) row[idxVarTheme] = variantTheme;
+
+            if (idxRefLink >= 0) row[idxRefLink] = ''; // luôn rỗng theo yêu cầu
+
+            // fill variant value vào đúng cột variant Temu
+            if (idxOptACol >= 0 && combo.aVal) row[idxOptACol] = combo.aVal;
+            if (idxOptBCol >= 0 && combo.bVal) row[idxOptBCol] = combo.bVal;
+
+            if (idxBasePrice >= 0 && combo.price) row[idxBasePrice] = combo.price;
+
+            // images
+            if (images.length) {
+                for (let i = 0; i < images.length && i < idxDetailImgs.length; i++) {
+                    row[idxDetailImgs[i]] = images[i];
+                }
+                if (idxSkuImgs.length && images[0]) {
+                    row[idxSkuImgs[0]] = images[0];
+                }
+            }
+            // video
+            if (idxVideo >= 0 && video) {
+                row[idxVideo] = video;
+            }
+
+            rows.push(row);
+        });
+
+        gmSet(K_ROWS, rows);
+        if (window.__temu_update_stats) window.__temu_update_stats();
+        addLog('info', `Added ${combos.length} rows for listing ${id}`);
+    }
+
+    // ========= RUNNER =========
+    let stepLock = false;
+    async function step() {
+        if (stepLock) return;
+        stepLock = true;
+        try {
+            const state = gmGet(K_STATE, 'idle');
+            if (state !== 'running') return;
+
+            const queue = gmGet(K_QUEUE, []);
+            if (!queue.length) {
+                gmSet(K_STATE, 'idle');
+                if (window.__temu_update_state) window.__temu_update_state();
+                addLog('info', 'Queue rỗng. Dừng.');
+                return;
+            }
+
+            const target = queue[0];
+            const current = canonicalListingUrl(location.href);
+            const canonTarget = canonicalListingUrl(target);
+
+            if (current !== canonTarget) {
+                addLog('info', 'Navigate to ' + canonTarget);
+                location.href = canonTarget;
+                return;
+            }
+
+            // đúng trang → xử lý
+            await handleCurrentListing();
+
+            const cfg = Object.assign({}, DEF_CFG, gmGet(K_CFG, {}));
+            if (cfg.waitMs && cfg.waitMs > 0) {
+                await sleep(cfg.waitMs);
+            }
+
+            const newQueue = queue.slice(1);
+            gmSet(K_QUEUE, newQueue);
+            if (window.__temu_update_stats) window.__temu_update_stats();
+
+            if (!newQueue.length) {
+                gmSet(K_STATE, 'idle');
+                if (window.__temu_update_state) window.__temu_update_state();
+                addLog('info', 'Hoàn tất tất cả listing.');
+                alert('Hoàn tất tất cả listing.');
+                return;
+            }
+
+            const nextUrl = canonicalListingUrl(newQueue[0]);
+            addLog('info', 'Next listing ' + nextUrl);
+            location.href = nextUrl;
+        } catch (e) {
+            addLog('error', 'step error: ' + e);
+        } finally {
+            stepLock = false;
+        }
+    }
+
+    function scheduleStep() {
+        step();
+    }
+
+    // ========= BOOT =========
+    function boot() {
+        if (window.top !== window.self) return;
+        createPanel();
+        if (gmGet(K_STATE, 'idle') === 'running') {
+            scheduleStep();
+        }
+    }
+
+    setInterval(() => {
+        if (gmGet(K_STATE, 'idle') === 'running') {
+            scheduleStep();
+        }
+    }, 2500);
+
+    setTimeout(boot, 800);
+})();
